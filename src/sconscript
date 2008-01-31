@@ -1,3 +1,5 @@
 Import('env')
 
-env.Program ('main.c')
+files=['main.c']
+
+env.Program ('../pdev', files, LIBS=['ixp'], LIBPATH='../libixp')

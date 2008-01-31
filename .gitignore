@@ -1,1 +1,5 @@
 .sconsign.dblite
+*.o
+*.a
+
+pdev

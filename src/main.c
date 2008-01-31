@@ -35,7 +35,11 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+void run_daemon () {
+}
 
 int main (int argc, char **argv) {
+ run_daemon();
+
  return 0;
 }
