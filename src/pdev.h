@@ -1,5 +1,5 @@
 /*
- *  main.c
+ *  pdev.h
  *  pdev
  *
  *  Created by Magnus Deininger on 31/01/2008.
@@ -35,13 +35,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pdev.h"
+#if !defined(PDEV_H)
+#define PDEV_H
 
-void run_daemon () {
-}
 
-int main (int argc, char **argv) {
- run_daemon();
 
- return 0;
-}
+#endif
