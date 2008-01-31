@@ -1,0 +1,5 @@
+Import('env')
+
+env.StaticLibrary ('ixp', ['client.c', 'error.c', 'message.c', 'rpc.c', 'socket.c',
+                           'thread_pthread.c', 'util.c', 'convert.c', 'intmap.c',
+                           'request.c', 'server.c', 'thread.c', 'transport.c'])

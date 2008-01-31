@@ -1,0 +1,7 @@
+env = Environment()
+env.Append(CCFLAGS = '-Ilibixp')
+
+Export('env')
+
+SConscript(['libixp/sconscript',
+            'src/sconscript'])
