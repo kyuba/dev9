@@ -1,6 +1,6 @@
 /*
  *  main.c
- *  pdev
+ *  dev9
  *
  *  Created by Magnus Deininger on 31/01/2008.
  *  Copyright 2008 Magnus Deininger. All rights reserved.
@@ -35,7 +35,7 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "pdev.h"
+#include "dev9.h"
 
 void run_daemon () {
 }

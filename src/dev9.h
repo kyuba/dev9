@@ -1,6 +1,6 @@
 /*
- *  pdev.h
- *  pdev
+ *  dev9.h
+ *  dev9
  *
  *  Created by Magnus Deininger on 31/01/2008.
  *  Copyright 2008 Magnus Deininger. All rights reserved.
@@ -35,8 +35,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#if !defined(PDEV_H)
-#define PDEV_H
+#if !defined(DEV9_H)
+#define DEV9_H
 
 
 
