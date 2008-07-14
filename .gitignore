@@ -2,4 +2,9 @@
 *.o
 *.a
 
-pdev
+html-*
+rtf-*
+txt-*
+.sconsign.dblite
+
+dev9

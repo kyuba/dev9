@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+
+<article lang="en" class="whitepaper" xmlns="http://docbook.org/ns/docbook"
+         version="4.5">
+ <articleinfo>
+  <date>2008-07-14</date>
+  <title>Dev9</title>
+  <authorgroup>
+   <author>
+    <firstname>Magnus</firstname>
+    <surname>Deininger</surname>
+   </author>
+  </authorgroup>
+  <copyright>
+   <year>2008</year>
+   <holder>Magnus Deininger</holder>
+  </copyright>
+
+  <abstract>
+   <para />
+  </abstract>
+ </articleinfo>
+
+ <section id="introduction">
+  <title>Introduction</title>
+
+  <para />
+ </section>
+
+ <section id="roadmap">
+  <title>Roadmap</title>
+
+  <para>Roadmaps help in guiding the development process, as well as
+   coordinating some efforts. We like both of these attributes, so here's a nice
+   roadmap for us.</para>
+
+  <section id="r-july-2008">
+   <title>(End of) July 2008</title>
+
+   <itemizedlist>
+    <listitem><para>Atomic LibC, v1 (standalone for linux/amd64 and
+     darwin/ppc)</para></listitem>
+    <listitem><para>Public website with a task tracker.</para></listitem>
+   </itemizedlist>
+  </section>
+
+  <section id="r-august-2008">
+   <title>August 2008</title>
+
+   <itemizedlist>
+    <listitem><para>Core Programme</para></listitem>
+    <listitem><para>Atomic LibC, v2 (standalone for linux/x86, linux/ppc and
+     linux/arm)</para></listitem>
+   </itemizedlist>
+  </section>
+
+  <section id="r-september-2008">
+   <title>September 2008</title>
+
+   <itemizedlist>
+    <listitem><para>Core Ruleset</para></listitem>
+   </itemizedlist>
+  </section>
+
+  <section id="r-october-2008">
+   <title>End of September 2008/Early October 2008</title>
+
+   <itemizedlist>
+    <listitem><para>Release of a 1.0 Version</para></listitem>
+   </itemizedlist>
+  </section>
+ </section>
+</article>

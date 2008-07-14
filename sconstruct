@@ -1,7 +1,30 @@
+import os, glob
+
 env = Environment()
-env.Append(CCFLAGS = '-Ilibixp')
 
 Export('env')
 
-SConscript(['libixp/sconscript',
-            'src/sconscript'])
+SConscript(['src/sconscript'])
+
+db2Xnc = [ 'html' ]
+
+def buildDocumentation(target, source, env):
+  global db2Xnc
+
+  for i in source:
+    for j in target:
+      for t in db2Xnc:
+        os.system ('docbook2' + t + ' ' + str(i) + ' --output documentation/' + t + '-' + str(j) + ' --nochunks')
+
+  for i in glob.glob('documentation/*/*.html'):
+    os.system ('tidy -m -i -w 80 ' + i)
+
+  return None
+
+docsBuilder = Builder(action = buildDocumentation)
+env.Append (BUILDERS = { 'Documentation' : docsBuilder })
+
+docsource = glob.glob ('documentation/*.xml')
+
+for i in docsource:
+  env.Documentation('reference', i)
