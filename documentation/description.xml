@@ -19,24 +19,78 @@
   </copyright>
 
   <abstract>
-   <para />
+   <para>dev9 is a /dev manager for Linux systems. The idea is to implement a
+    9p2000.u filesystem in userspace to do the tasks of the old
+    <quote>devfs</quote> filesystem.</para>
   </abstract>
  </articleinfo>
 
  <section id="introduction">
   <title>Introduction</title>
 
+  <para>Currently, most Linux systems have a number of options for managing
+   the special /dev directory. Typical desktop distributions, for example, tend
+   to use the <quote>udev</quote> daemon, whereas embedded devices often have a
+   static /dev, or use <quote>mdev</quote>. Some desktop distributions may also
+   use udev after the system has booted up, but rely on mdev while the system is
+   in an autoconfiguring initramfs. Older or modern but more exotic Linux
+   distributions on the other hand may use the special <quote>devfs</quote>
+   pseudo-filesystem.</para>
+
+  <para>There's a number of issues with these management methods: udev is
+   theoretically nice, but it's easily integrated poorly into the system startup
+   sequence, thus resulting in poor bootup speeds when used with excessive
+   amounts of shell scripting for coldplugging of devices. Static /dev
+   management is very swift, but it must be kept up-to-date manually or by
+   periodically running maintenance tasks, and it also has the disadvantage of
+   not allowing for nice features like a more meaningful device naming scheme.
+   Devfs was up to a nice start, but it eventually suffered from bitrot and has
+   been removed from most kernel patchsets. Mdev is slick and fast, but it isn't
+   supposed to be kept running to update /dev if new devices are added to the
+   system while it is running, which is an issue that a static /dev suffers from
+   as well.</para>
+
+  <para>To aleviate these issues, we're trying to build a programme that is sort
+   of a combination of devfs and udev; that is, a device-managing filesystem
+   implemented in userspace, using the 9p2000.u protocol. This has a number of
+   advantages, which will be pointed out in this paper.</para>
+ </section>
+
+ <section id="primus-advantages">
+  <title>Advantages</title>
+
   <para />
  </section>
 
- <section id="roadmap">
+ <section id="secundus-os-requirements">
+  <title>OS requirements</title>
+
+  <para>This project is, by its very definition, strictly Linux-only, so
+   portability is not going to be any issue whatsoever, save for portability
+   between different Linux kernel versions and architecture-specific
+   issues.</para>
+
+  <section id="secundus-kernel-requirements">
+   <title>Kernel requirements</title>
+
+   <para>Like any 9p2000.u filesystem, this project will require a running
+    kernel with support for the 9p2000.u virtual filesystem protocol. Since
+    patches for this have been included in the vanilla 2.6.x kernel sources for
+    a number of versions now, this shouldn't pose much of a problem.</para>
+
+   <para>Additionally, this programme will require support for sysfs and netlink
+    in the kernel. Both of these would also be required for udev to work.</para>
+  </section>
+ </section>
+
+ <section id="tertius-roadmap">
   <title>Roadmap</title>
 
   <para>Roadmaps help in guiding the development process, as well as
-   coordinating some efforts. We like both of these attributes, so here's a nice
+   coordinating some efforts. We like both of these attributes, so here's a
    roadmap for us.</para>
 
-  <section id="r-july-2008">
+  <section id="tr-july-2008">
    <title>(End of) July 2008</title>
 
    <itemizedlist>
@@ -46,17 +100,22 @@
    </itemizedlist>
   </section>
 
-  <section id="r-august-2008">
+  <section id="tr-august-2008">
    <title>August 2008</title>
 
    <itemizedlist>
+    <listitem><para>9p2000(.u) addon for atomic-libc</para></listitem>
     <listitem><para>Core Programme</para></listitem>
+    <listitem><para>Minimalistic Ruleset</para></listitem>
+    <listitem><para>Support for use in kyuuba-enabled systems</para></listitem>
+    <listitem><para>Support for use in baselayout2-based Gentoo/Linux
+     systems</para></listitem>
     <listitem><para>Atomic LibC, v2 (standalone for linux/x86, linux/ppc and
      linux/arm)</para></listitem>
    </itemizedlist>
   </section>
 
-  <section id="r-september-2008">
+  <section id="tr-september-2008">
    <title>September 2008</title>
 
    <itemizedlist>
@@ -64,7 +123,7 @@
    </itemizedlist>
   </section>
 
-  <section id="r-october-2008">
+  <section id="tr-october-2008">
    <title>End of September 2008/Early October 2008</title>
 
    <itemizedlist>
