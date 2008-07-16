@@ -56,10 +56,37 @@
    advantages, which will be pointed out in this paper.</para>
  </section>
 
- <section id="primus-advantages">
-  <title>Advantages</title>
+ <section id="primus-concept">
+  <title>Concept</title>
 
-  <para />
+  <para>This chapter will sum up the general idea of how dev9 is going to work,
+   and how it's supposed to be used by init programmes and users.</para>
+
+  <section id="pc-operation">
+   <title>The Daemon</title>
+  </section>
+
+  <section id="pc-usage">
+   <title>Usage</title>
+
+   <section id="pcu-i-o">
+    <title>I/O</title>
+   </section>
+  </section>
+
+  <section id="pc-configuration">
+   <title>Configuration</title>
+
+   <para>All the configuration data will be stored as S-expressions in textual
+    form, because S-expressions are easy, and fast to parse. Unlike XML or other
+    textual storage methods, they're also typed and a parser is easily
+    implemented in under 10k of object code.</para>
+
+   <para>Configuration data should be stored in /etc/dev9 or the appropriate
+    location for the file hierarchy system in use. Additionally, the daemon will
+    need to accept its configuration files via the command-line, so that an init
+    or a user is able to adjust the configuration as needed.</para>
+  </section>
  </section>
 
  <section id="secundus-os-requirements">
@@ -70,16 +97,24 @@
    between different Linux kernel versions and architecture-specific
    issues.</para>
 
-  <section id="secundus-kernel-requirements">
+  <section id="sor-kernel-requirements">
    <title>Kernel requirements</title>
 
    <para>Like any 9p2000.u filesystem, this project will require a running
-    kernel with support for the 9p2000.u virtual filesystem protocol. Since
+    kernel with support for the 9p2000.u (network) filesystem protocol. Since
     patches for this have been included in the vanilla 2.6.x kernel sources for
     a number of versions now, this shouldn't pose much of a problem.</para>
 
    <para>Additionally, this programme will require support for sysfs and netlink
     in the kernel. Both of these would also be required for udev to work.</para>
+  </section>
+
+  <section id="sor-library-requirements">
+   <title>Library requirements</title>
+
+   <para>To achieve minimal code size, dev9 will rely on the Atomic-LibC
+    project. This should make for extremely small binaries, as well as provide
+    the code needed to deal with S-expressions.</para>
   </section>
  </section>
 
