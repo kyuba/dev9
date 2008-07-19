@@ -1,6 +1,7 @@
 .sconsign.dblite
 *.o
 *.a
+.DS_Store
 
 html-*
 rtf-*
