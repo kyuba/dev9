@@ -109,7 +109,6 @@ if scanexec (env['compilerPrefix'] + '-ranlib'):
 sbindir         = env['destdir'] + env['prefix'] + 'sbin/'
 bindir          = env['destdir'] + env['prefix'] + 'bin/'
 libdir          = env['destdir'] + env['prefix'] + env['libdir'] + '/'
-pkgconfigpath   = libdir + 'pkgconfig/'
 includedir      = env['destdir'] + env['prefix'] + 'include/dev9/'
 # os.environ['PKG_CONFIG_PATH']
 ##############
@@ -294,4 +293,4 @@ for i in installheaders:
   if x:
     env.Install (includedir, x);
 
-env.Alias('install', [ pkgconfigpath, libdir, includedir ])
+env.Alias('install', [ libdir, includedir ])
