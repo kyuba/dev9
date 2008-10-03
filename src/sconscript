@@ -1,5 +1,0 @@
-Import('env')
-
-files=['main.c']
-
-env.Program ('../dev9', files)
