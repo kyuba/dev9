@@ -1,6 +1,6 @@
 /*
  *  dev9.c
- *  libcurie
+ *  dev9
  *
  *  Created by Magnus Deininger on 03/10/2008.
  *  Copyright 2008 Magnus Deininger. All rights reserved.
@@ -43,6 +43,8 @@
 #include <duat/filesystem.h>
 #include <duat/sxfs.h>
 
+#include <stdlib.h>
+
 static void *rm_recover(unsigned long int s, void *c, unsigned long int l)
 {
     exit(22);
@@ -60,9 +62,6 @@ int main(void) {
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
-
-    dfs_update_user  ("nyu",     1000);
-    dfs_update_group ("kittens", 100);
 
     multiplex_d9s();
 

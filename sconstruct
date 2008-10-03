@@ -106,9 +106,11 @@ if scanexec (env['compilerPrefix'] + '-ranlib'):
 
 # install directories
 
+sbindir         = env['destdir'] + env['prefix'] + 'sbin/'
+bindir          = env['destdir'] + env['prefix'] + 'bin/'
 libdir          = env['destdir'] + env['prefix'] + env['libdir'] + '/'
 pkgconfigpath   = libdir + 'pkgconfig/'
-includedir      = env['destdir'] + env['prefix'] + 'include/duat/'
+includedir      = env['destdir'] + env['prefix'] + 'include/dev9/'
 # os.environ['PKG_CONFIG_PATH']
 ##############
 
@@ -264,10 +266,10 @@ if optimiseLinking:
     env.Append(LINKFLAGS='-Wl,-z,noexecstack -Wl,-z,norelro')
 
 if not env['skipPkgConfig']:
-  env.Append(LINKFLAGS = subprocess.Popen(['pkg-config', '--libs', 'libcurie'], stdout=subprocess.PIPE).communicate()[0],
-             CFLAGS = subprocess.Popen(['pkg-config', '--cflags', 'libcurie'], stdout=subprocess.PIPE).communicate()[0])
+  env.Append(LINKFLAGS = subprocess.Popen(['pkg-config', '--libs', 'libduat-hosted'], stdout=subprocess.PIPE).communicate()[0],
+             CFLAGS = subprocess.Popen(['pkg-config', '--cflags', 'libduat-hosted'], stdout=subprocess.PIPE).communicate()[0])
 
-env.Append (LIBS = ['duat', 'curie'])
+env.Append (LIBS = ['duat', 'curie-hosted'])
 
 # adjust linker/compiler flags in pkgconfig file
 
@@ -280,9 +282,9 @@ for i in sourcefiles:
     if n:
       sf += [ n ]
 
-x = env.StaticLibrary('duat', sf)
-env.Alias ('library', x)
-env.Install (libdir, x)
+x = env.Program('dev9', sf)
+env.Alias ('programme', x)
+env.Install (bindir, x)
 
 for i in glob.glob('tests/*.c'):
   env.Program(i)
@@ -291,8 +293,5 @@ for i in installheaders:
   x = findheader(i)
   if x:
     env.Install (includedir, x);
-
-env.Install(pkgconfigpath, 'libduat.pc')
-env.Install(pkgconfigpath, 'libduat-hosted.pc')
 
 env.Alias('install', [ pkgconfigpath, libdir, includedir ])
