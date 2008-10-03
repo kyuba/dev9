@@ -22,7 +22,7 @@ opts.Add(BoolOption('skipPkgConfig', 'skip the pkg-config calls', False))
 
 
 opts.Add('libdir', 'libdir base name (i.e. lib, lib32, lib64, etc)', 'lib')
-opts.Add('prefix', 'prefix (static libs are fine in /usr)', '/usr/')
+opts.Add('prefix', 'prefix', '/')
 opts.Add('destdir', 'extra installation prefix', '')
 
 if 'CFLAGS' in os.environ:
