@@ -283,7 +283,7 @@ for i in sourcefiles:
 
 x = env.Program('dev9', sf)
 env.Alias ('programme', x)
-env.Install (bindir, x)
+env.Install (sbindir, x)
 
 for i in glob.glob('tests/*.c'):
   env.Program(i)
@@ -293,4 +293,4 @@ for i in installheaders:
   if x:
     env.Install (includedir, x);
 
-env.Alias('install', [ libdir, includedir ])
+env.Alias('install', [ sbindir ])
