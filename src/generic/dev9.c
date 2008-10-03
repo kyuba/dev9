@@ -57,12 +57,22 @@ static void *gm_recover(unsigned long int s)
     return (void *)0;
 }
 
+static void connect_to_netlink()
+{
+    int fd;
+
+    multiplex_io();
+
+    
+}
+
 int main(void) {
     struct dfs *fs;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
 
+    connect_to_netlink();
     multiplex_d9s();
 
     fs = dfs_create ();
