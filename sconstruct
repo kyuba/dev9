@@ -1,7 +1,7 @@
 import os, subprocess, glob
 
 # PROGRAMME FILES
-sourcefiles = [ 'dev9' ]
+sourcefiles = [ 'dev9', 'rules' ]
 
 installheaders = [ ]
 

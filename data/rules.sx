@@ -1,0 +1,8 @@
+(set-user "root") ; default user
+(set-group "root") ; default group
+(set-mode 432) ; 0660 in decimal
+
+(when (group-exists SUBSYSTEM) (set-group SUBSYSTEM))
+(when (match (SUBSYSTEM . "^block$")) (set-attribute 'block-device))
+
+(when (match (SUBSYSTEM . "^.+$")) (mknod SUBSYSTEM (DEV-BASE-PATH ID)))

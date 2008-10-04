@@ -56,9 +56,11 @@
 #include <sys/socket.h>
 #include <linux/netlink.h>
 
+#include <dev9/rules.h>
+
 #define NETLINK_BUFFER (1024*1024*16)
 
-static void connect_to_netlink();
+static void connect_to_netlink(struct dfs *);
 
 static void *rm_recover(unsigned long int s, void *c, unsigned long int l)
 {
@@ -152,8 +154,9 @@ static void ping_for_uevents (char *dir, char depth) {
     }
 }
 
-static void on_netlink_read(struct io *io, void *ignored)
+static void on_netlink_read(struct io *io, void *fsv)
 {
+    struct dfs *fs = (struct dfs *)fsv;
     char *b = io->buffer,
          *fragment_header = b,
          *is = b,
@@ -177,11 +180,14 @@ static void on_netlink_read(struct io *io, void *ignored)
 
                 if (is == ms) /* fragment header */
                 {
+                    if (is != b) /* first fragment header: nothing to examine */
+                    {
+                        dev9_rules_apply
+                            (cons(make_symbol (fragment_header), attributes),
+                             fs);
+                    }
                     fragment_header = is;
-                    fprintf (stderr, "[new fragment: %s]\n", fragment_header);
-                    sx_destroy(attributes);
                     attributes = sx_end_of_list;
-                    frag_boundary = 1;
                 }
                 else /* key/value pair */
                 {
@@ -204,12 +210,12 @@ static void on_netlink_read(struct io *io, void *ignored)
 
     if (frag_boundary)
     {
-        fprintf (stderr, "[end: on boundary]\n");
+        dev9_rules_apply
+            (cons(make_symbol (fragment_header), attributes), fs);
         io->position += io->length;
     }
     else
     {
-        fprintf (stderr, "[end: not on boundary]\n");
         io->position += (int_pointer)(max - fragment_header);
     }
 }
@@ -226,7 +232,7 @@ static void mx_on_subprocess_death(struct exec_context *cx, void *d)
         exit (26);
 }
 
-static void connect_to_netlink()
+static void connect_to_netlink(struct dfs *fs)
 {
     struct sockaddr_nl nls;
     int fd;
@@ -265,7 +271,7 @@ static void connect_to_netlink()
     io = io_open (fd);
     io->type = iot_read;
 
-    multiplex_add_io (io, on_netlink_read, on_netlink_close, (void *)0);
+    multiplex_add_io (io, on_netlink_read, on_netlink_close, (void *)fs);
 
     context = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
     switch (context->pid)
@@ -282,11 +288,24 @@ static void connect_to_netlink()
     }
 }
 
-int main(void) {
+static void on_rules_read(struct sexpr *sx, struct sexpr_io *io, void *unused)
+{
+    dev9_rules_add (sx, io);
+}
+
+int main(int argc, char **argv, char **envv) {
+    int i;
     struct dfs *fs;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
+
+    multiplex_sexpr();
+    for (i = 1; i < argc; i++) {
+        multiplex_add_sexpr(sx_open_io (io_open_read (argv[i]), io_open (-1)),
+                            on_rules_read, (void *)0);
+        while (multiplex() != mx_nothing_to_do);
+    }
 
     multiplex_process();
     multiplex_io();
@@ -296,8 +315,8 @@ int main(void) {
     fs = dfs_create ();
 
     multiplex_add_d9s_socket ("/tmp/dev9-duat-socket", fs);
+    connect_to_netlink(fs);
 
-    connect_to_netlink();
     while (multiplex() != mx_nothing_to_do);
 
     return 0;
