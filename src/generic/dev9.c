@@ -302,7 +302,7 @@ static void print_help()
 {
     fprintf (stdout,
              "dev9-1\n"
-             "Usage: dev9 [-SMmh] [rules-file] [-s socket-name]\n"
+             "Usage: dev9 [-SMmh] [rules-file ...] [-s socket-name]\n"
              "\n"
              " -S          Talk 9p on stdio\n"
              " -s          Talk 9p on the supplied socket-name\n"
