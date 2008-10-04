@@ -298,20 +298,74 @@ static void on_rules_read(struct sexpr *sx, struct sexpr_io *io, void *unused)
     dev9_rules_add (sx, io);
 }
 
+static void print_help()
+{
+    fprintf (stdout,
+             "dev9-1\n"
+             "Usage: dev9 [-SMmh] [rules-file] [-s socket-name]\n"
+             "\n"
+             " -S          Talk 9p on stdio\n"
+             " -s          Talk 9p on the supplied socket-name\n"
+             " -M          Mount /proc and /sys\n"
+             " -m          Automount dev9 over /dev\n"
+             " -h          Print this and exit.\n"
+             "\n"
+             " rules-file  The rules file to use, defaults to /etc/dev9/rules.sx\n"
+             " socket-name The socket to use, defaults to\n"
+             "\n"
+             "Either -s or -S must be specified.\n"
+             "\n");
+    exit(0);
+}
+
 int main(int argc, char **argv, char **envv) {
     int i;
     struct dfs *fs;
     struct group *g;
     struct passwd *u;
+    char use_stdio = 0;
+    char mount_proc_sys = 0;
+    char mount_self = 0;
+    char *use_socket = (char *)0;
+    char next_socket = 0;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
 
     multiplex_sexpr();
+
     for (i = 1; i < argc; i++) {
+        if (argv[i][0] == '-')
+        {
+            int j;
+            for (j = 1; argv[i][j] != (char)0; j++) {
+                switch (argv[i][j])
+                {
+                    case 'S': use_stdio  ^= 1; break;
+                    case 'M': mount_proc_sys ^= 1; break;
+                    case 'm': mount_self ^= 1; break;
+                    case 's': next_socket = 1; break;
+                    default:
+                        print_help();
+                }
+            }
+            continue;
+        }
+
+        if (next_socket)
+        {
+            use_socket = argv[i];
+            next_socket = 0;
+        }
+
         multiplex_add_sexpr(sx_open_io (io_open_read (argv[i]), io_open (-1)),
                             on_rules_read, (void *)0);
         while (multiplex() != mx_nothing_to_do);
+    }
+
+    if ((use_socket == (char *)0) && (use_stdio == 0))
+    {
+        print_help();
     }
 
     while ((u = getpwent())) dfs_update_user (u->pw_name, u->pw_uid);
@@ -319,15 +373,38 @@ int main(int argc, char **argv, char **envv) {
     while ((g = getgrent())) dfs_update_group (g->gr_name, g->gr_gid);
     endgrent();
 
+    fs = dfs_create ();
+
+    connect_to_netlink(fs);
+
     multiplex_process();
     multiplex_io();
 
     multiplex_d9s();
 
-    fs = dfs_create ();
+    if (mount_proc_sys)
+    {
+        /* magic */
+    }
 
-    multiplex_add_d9s_socket ("/tmp/dev9-duat-socket", fs);
-    connect_to_netlink(fs);
+    if (use_stdio)
+    {
+        multiplex_add_d9s_stdio (fs);
+    }
+    else
+    {
+        if (daemon(0, 0) == -1)
+            perror ("dev9: could not fork to the background");
+    }
+
+    if (use_socket != (char *)0) {
+        multiplex_add_d9s_socket (use_socket, fs);
+    }
+
+    if (mount_self)
+    {
+        /* moar magic */
+    }
 
     while (multiplex() != mx_nothing_to_do);
 

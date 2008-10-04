@@ -74,6 +74,28 @@ struct state
     int_16 minor;
 };
 
+static struct sexpr *lookup_symbol (struct sexpr *environ, struct sexpr *key)
+{
+    struct sexpr *cur = environ;
+
+    while (consp(cur))
+    {
+        struct sexpr *sx_car = car(cur);
+
+        if (consp(sx_car))
+        {
+            if (truep(equalp(car(sx_car), key)))
+            {
+                return cdr(sx_car);
+            }
+        }
+
+        cur = cdr (cur);
+    }
+
+    return sx_nonexistent;
+}
+
 static void dev9_rules_add_deep
         (struct sexpr *sx, struct sexpr_io *io, struct rule **currule)
 {
@@ -199,28 +221,6 @@ static void dev9_rules_add_deep
     }
 
     (*currule) = rule;
-}
-
-static struct sexpr *lookup_symbol (struct sexpr *environ, struct sexpr *key)
-{
-    struct sexpr *cur = environ;
-
-    while (consp(cur))
-    {
-        struct sexpr *sx_car = car(cur);
-
-        if (consp(sx_car))
-        {
-            if (truep(equalp(car(sx_car), key)))
-            {
-                return cdr(sx_car);
-            }
-        }
-
-        cur = cdr (cur);
-    }
-
-    return sx_nonexistent;
 }
 
 static struct sexpr * dev9_rules_apply_deep
@@ -350,7 +350,7 @@ static struct sexpr * dev9_rules_apply_deep
             return sx_true;
     }
 
-    return sx_true;
+    return sx_false;
 }
 
 void dev9_rules_add (struct sexpr *sx, struct sexpr_io *io)
