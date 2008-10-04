@@ -159,35 +159,41 @@ static void on_netlink_read(struct io *io, void *ignored)
          *is = b,
          *ms = b,
          *i = b,
-         *max = (b + io->length);
+         *max = (b + io->length),
+         frag_boundary = 0;
     struct sexpr *attributes = sx_end_of_list;
 
     while (i < max)
     {
+        frag_boundary = 0;
+
         switch (*i)
         {
-            case '0':
-                fprintf (stderr, "i=%u, is=%u, ms=%u\n", i, is, ms);
+            case 0:
+                if (i == (max - 1)) /* definitely a fragment end */
+                {
+                    frag_boundary = 1;
+                }
 
                 if (is == ms) /* fragment header */
                 {
                     fragment_header = is;
-                    fprintf (stderr, "new fragment: %s\n", fragment_header);
+                    fprintf (stderr, "[new fragment: %s]\n", fragment_header);
                     sx_destroy(attributes);
                     attributes = sx_end_of_list;
+                    frag_boundary = 1;
                 }
                 else /* key/value pair */
                 {
                     *ms = 0;
-                    ms++;
                     attributes = cons (cons(make_symbol(is),
-                                            make_string(ms)),
+                                            make_string(ms+1)),
                                        attributes);
+                    *ms = '=';
                 }
 
                 i++;
                 is = ms = i;
-                fprintf (stderr, "i=%u, is=%u, ms=%u\n", i, is, ms);
                 break;
             case '=':
                 if (ms == is) ms = i;
@@ -196,9 +202,16 @@ static void on_netlink_read(struct io *io, void *ignored)
         i++;
     }
 
-    fprintf (stderr, "call-end\n");
-
-    io->position += (int_pointer)(max - fragment_header);
+    if (frag_boundary)
+    {
+        fprintf (stderr, "[end: on boundary]\n");
+        io->position += io->length;
+    }
+    else
+    {
+        fprintf (stderr, "[end: not on boundary]\n");
+        io->position += (int_pointer)(max - fragment_header);
+    }
 }
 
 static void on_netlink_close(struct io *io, void *ignored)
@@ -260,9 +273,9 @@ static void connect_to_netlink()
         case -1:
             exit (25);
         case 0:
-            ping_for_uevents("/sys/bus", 1);
-            ping_for_uevents("/sys/class", 1);
-            ping_for_uevents("/sys/block", 1);
+            ping_for_uevents("/sys/bus", 2);
+            ping_for_uevents("/sys/class", 2);
+            ping_for_uevents("/sys/block", 2);
             exit (0);
         default:
             multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
