@@ -108,6 +108,7 @@ if scanexec (env['compilerPrefix'] + '-ranlib'):
 
 sbindir         = env['destdir'] + env['prefix'] + 'sbin/'
 bindir          = env['destdir'] + env['prefix'] + 'bin/'
+etcdir          = env['destdir'] + env['prefix'] + 'etc/dev9/'
 libdir          = env['destdir'] + env['prefix'] + env['libdir'] + '/'
 includedir      = env['destdir'] + env['prefix'] + 'include/dev9/'
 # os.environ['PKG_CONFIG_PATH']
@@ -285,6 +286,8 @@ x = env.Program('dev9', sf)
 env.Alias ('programme', x)
 env.Install (sbindir, x)
 
+env.Install (etcdir, 'data/rules.sx')
+
 for i in glob.glob('tests/*.c'):
   env.Program(i)
 
@@ -293,4 +296,4 @@ for i in installheaders:
   if x:
     env.Install (includedir, x);
 
-env.Alias('install', [ sbindir ])
+env.Alias('install', [ sbindir, etcdir ])
