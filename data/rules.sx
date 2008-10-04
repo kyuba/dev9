@@ -1,8 +1,9 @@
-(set-user "root") ; default user
-(set-group "root") ; default group
-(set-mode 432) ; 0660 in decimal
+(when (match (SUBSYSTEM . "^block$")) (set-attribute block-device))
+(when (match (SUBSYSTEM . "^block$")) (set-group "disk"))
 
-(when (group-exists SUBSYSTEM) (set-group SUBSYSTEM))
-(when (match (SUBSYSTEM . "^block$")) (set-attribute 'block-device))
+;; example: changing file modes (note: set-mode needs a decimal integer)
+; (when (match (SUBSYSTEM . "^block$")) (set-mode 432))
 
-(when (match (SUBSYSTEM . "^.+$")) (mknod SUBSYSTEM (DEV-BASE-PATH ID)))
+(when (match (SUBSYSTEM . "^(block|tty|misc)$")) (mknod DEV-BASE-PATH))
+
+(when (match (SUBSYSTEM . "^.+$")) (mknod SUBSYSTEM DEV-BASE-PATH))

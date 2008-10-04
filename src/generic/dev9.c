@@ -36,6 +36,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _BSD_SOURCE
+
 #include <curie/multiplex.h>
 #include <curie/memory.h>
 
@@ -57,6 +59,9 @@
 #include <linux/netlink.h>
 
 #include <dev9/rules.h>
+
+#include <pwd.h>
+#include <grp.h>
 
 #define NETLINK_BUFFER (1024*1024*16)
 
@@ -296,6 +301,8 @@ static void on_rules_read(struct sexpr *sx, struct sexpr_io *io, void *unused)
 int main(int argc, char **argv, char **envv) {
     int i;
     struct dfs *fs;
+    struct group *g;
+    struct passwd *u;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
@@ -306,6 +313,11 @@ int main(int argc, char **argv, char **envv) {
                             on_rules_read, (void *)0);
         while (multiplex() != mx_nothing_to_do);
     }
+
+    while ((u = getpwent())) dfs_update_user (u->pw_name, u->pw_uid);
+    endpwent();
+    while ((g = getgrent())) dfs_update_group (g->gr_name, g->gr_gid);
+    endgrent();
 
     multiplex_process();
     multiplex_io();
