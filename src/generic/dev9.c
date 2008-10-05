@@ -58,6 +58,8 @@
 #include <sys/socket.h>
 #include <linux/netlink.h>
 
+#include <sys/mount.h>
+
 #include <dev9/rules.h>
 
 #include <pwd.h>
@@ -330,7 +332,6 @@ int main(int argc, char **argv, char **envv) {
     struct group *g;
     struct passwd *u;
     char use_stdio = 0;
-    char mount_proc_sys = 0;
     char mount_self = 0;
     char *use_socket = (char *)0;
     char next_socket = 0;
@@ -348,9 +349,12 @@ int main(int argc, char **argv, char **envv) {
             for (j = 1; argv[i][j] != (char)0; j++) {
                 switch (argv[i][j])
                 {
-                    case 'S': use_stdio  ^= 1; break;
-                    case 'M': mount_proc_sys ^= 1; break;
-                    case 'm': mount_self ^= 1; break;
+                    case 'S': use_stdio = 1; break;
+                    case 'M':
+                        mount ("proc", "/proc", "proc", 0, (char *)0);
+                        mount ("sys", "/sys", "sysfs", 0, (char *)0);
+                        break;
+                    case 'm': mount_self = 1; break;
                     case 's': next_socket = 1; break;
                     default:
                         print_help();
@@ -398,11 +402,6 @@ int main(int argc, char **argv, char **envv) {
 
     multiplex_d9s();
 
-    if (mount_proc_sys)
-    {
-        /* magic */
-    }
-
     if (use_stdio)
     {
         multiplex_add_d9s_stdio (fs);
@@ -415,11 +414,16 @@ int main(int argc, char **argv, char **envv) {
 
     if (use_socket != (char *)0) {
         multiplex_add_d9s_socket (use_socket, fs);
+
+        if (mount_self)
+        {
+            mount (use_socket, "/mnt", "9p", 0, "trans=unix");
+        }
     }
 
     if (mount_self)
     {
-        /* moar magic */
+        /* needs moar magic */
     }
 
     while (multiplex() != mx_nothing_to_do);
