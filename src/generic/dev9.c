@@ -71,6 +71,7 @@
 
 #define DEFAULT_RULES ETCDIR "rules.sx"
 
+/* This is probably a bit excessive, but better safe than sorry right now. */
 #define NETLINK_BUFFER (1024*1024*32)
 
 static void connect_to_netlink(struct dfs *);
@@ -310,18 +311,21 @@ static void print_help()
 {
     fprintf (stdout,
              "dev9-1\n"
-             "Usage: dev9 [-SMmh] [rules-file ...] [-s socket-name]\n"
+             "Usage: dev9 [-opmih] [rules-file ...] [-s socket-name]\n"
              "\n"
-             " -S          Talk 9p on stdio\n"
+             " -o          Talk 9p on stdio\n"
              " -s          Talk 9p on the supplied socket-name\n"
-             " -M          Mount /proc and /sys\n"
+             " -p          Mount /proc and /sys\n"
              " -m          Automount dev9 over /dev\n"
+             " -i          Initialise common nodes under /dev.\n"
              " -h          Print this and exit.\n"
              "\n"
              " rules-file  The rules file to use, defaults to " DEFAULT_RULES "\n"
              " socket-name The socket to use, defaults to\n"
              "\n"
              "One of -S, -s or -m must be specified.\n"
+             "\n"
+             "The programme will automatically fork to the background, unless -o is used.\n"
              "\n");
     exit(0);
 }
@@ -336,6 +340,7 @@ int main(int argc, char **argv, char **envv) {
     char *use_socket = (char *)0;
     char next_socket = 0;
     char had_rules_file = 0;
+    char initialise_common = 0;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
@@ -349,11 +354,12 @@ int main(int argc, char **argv, char **envv) {
             for (j = 1; argv[i][j] != (char)0; j++) {
                 switch (argv[i][j])
                 {
-                    case 'S': use_stdio = 1; break;
-                    case 'M':
+                    case 'o': use_stdio = 1; break;
+                    case 'p':
                         mount ("proc", "/proc", "proc", 0, (char *)0);
                         mount ("sys", "/sys", "sysfs", 0, (char *)0);
                         break;
+                    case 'i': initialise_common = 1; break;
                     case 'm': mount_self = 1; break;
                     case 's': next_socket = 1; break;
                     default:
@@ -395,6 +401,20 @@ int main(int argc, char **argv, char **envv) {
 
     fs = dfs_create ();
     fs->root->c.mode |= 0111;
+
+    if (initialise_common)
+    {
+        struct dfs_directory *d;
+        d = dfs_mk_directory (fs->root, "pts");
+        d->c.mode |= 0111;
+        d = dfs_mk_directory (fs->root, "shm");
+        d->c.mode |= 0111;
+
+        dfs_mk_symlink (fs->root, "fd",     "/proc/self/fd");
+        dfs_mk_symlink (fs->root, "stdin",  "fd/0");
+        dfs_mk_symlink (fs->root, "stdout", "fd/1");
+        dfs_mk_symlink (fs->root, "stderr", "fd/2");
+    }
 
     connect_to_netlink(fs);
 
@@ -441,7 +461,9 @@ int main(int argc, char **argv, char **envv) {
                 case 0:
                     close (fdi[0]);
                     close (fdo[1]);
-                    mount ("dev9", "/mnt", "9p", 0, options);
+                    mount ("dev9",   "/mnt",     "9p",     0, options);
+                    mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
+                    mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
                     exit (0);
                 default:
                     close (fdo[0]);

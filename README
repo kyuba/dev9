@@ -30,13 +30,18 @@ Compilation:
     $ scons --help
 
 Installation:
-  use this command to install regularly (usually into /):
+  Use this command to install regularly (usually into /):
 
     $ scons install
 
   To add an installation-only prefix, use:
 
     $ scons destdir=/some/prefix install
+
+Required Kernel-Side Support:
+  You need to enable v9fs support in your Linux kernel to use this programme in
+  any meaningful way. To do this, check the list of filesystems in the kernel's
+  configuration; v9fs may be found in the Network Filesystems section.
 
 CONTACT:
   Best bet is IRC: freenode #kyuba
