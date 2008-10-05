@@ -40,7 +40,6 @@
 
 #include <curie/multiplex.h>
 #include <curie/memory.h>
-#include <curie/network.h>
 
 #include <duat/9p-server.h>
 #include <duat/filesystem.h>
@@ -440,9 +439,13 @@ int main(int argc, char **argv, char **envv) {
                 case -1:
                     exit (25);
                 case 0:
+                    close (fdi[0]);
+                    close (fdo[1]);
                     mount ("dev9", "/mnt", "9p", 0, options);
                     exit (0);
                 default:
+                    close (fdo[0]);
+                    close (fdi[1]);
                     multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
             }
         }
