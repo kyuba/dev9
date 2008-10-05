@@ -40,6 +40,7 @@
 
 #include <curie/multiplex.h>
 #include <curie/memory.h>
+#include <curie/network.h>
 
 #include <duat/9p-server.h>
 #include <duat/filesystem.h>
@@ -321,7 +322,7 @@ static void print_help()
              " rules-file  The rules file to use, defaults to " DEFAULT_RULES "\n"
              " socket-name The socket to use, defaults to\n"
              "\n"
-             "Either -s or -S must be specified.\n"
+             "One of -S, -s or -m must be specified.\n"
              "\n");
     exit(0);
 }
@@ -376,7 +377,7 @@ int main(int argc, char **argv, char **envv) {
         had_rules_file = 1;
     }
 
-    if ((use_socket == (char *)0) && (use_stdio == 0))
+    if ((use_socket == (char *)0) && (use_stdio == 0) && (mount_self == 0))
     {
         print_help();
     }
@@ -394,6 +395,7 @@ int main(int argc, char **argv, char **envv) {
     endgrent();
 
     fs = dfs_create ();
+    fs->root->c.mode |= 0111;
 
     connect_to_netlink(fs);
 
@@ -414,16 +416,36 @@ int main(int argc, char **argv, char **envv) {
 
     if (use_socket != (char *)0) {
         multiplex_add_d9s_socket (use_socket, fs);
-
-        if (mount_self)
-        {
-            mount (use_socket, "/mnt", "9p", 0, "trans=unix");
-        }
-    }
+   }
 
     if (mount_self)
     {
-        /* needs moar magic */
+        char options[256];
+        struct io *in, *out;
+        int fdi[2], fdo[2];
+
+        if ((pipe (fdi) != -1) && (pipe (fdo) != -1))
+        {
+            struct exec_context *context;
+            in  = io_open(fdi[0]);
+            out = io_open(fdo[1]);
+
+            multiplex_add_d9s_io(in, out, fs);
+
+            snprintf (options, 256, "access=any,trans=fd,rfdno=%i,wfdno=%i", fdo[0], fdi[1]);
+
+            context = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
+            switch (context->pid)
+            {
+                case -1:
+                    exit (25);
+                case 0:
+                    mount ("dev9", "/mnt", "9p", 0, options);
+                    exit (0);
+                default:
+                    multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
+            }
+        }
     }
 
     while (multiplex() != mx_nothing_to_do);
