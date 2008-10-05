@@ -1,0 +1,42 @@
+###- QUICK AND DIRTY: COMPILATION AND INSTALLATION -############################
+  You'll need scons, pkg-config and libcurie-3 as well as libduat-3 or higher.
+  No ifs or buts.
+
+    $ scons install
+
+
+################################################################################
+
+
+NOTE:
+  This is a rather early version of the programme, and as such may exhibit bugs
+  and severely odd behaviour. Please keep that in mind while testing. Thank you.
+
+NOTE.2:
+  Please take note of the library licence (the COPYING file), as well as the
+  credits (the CREDITS file).
+
+
+###- DETAILS -##################################################################
+
+Compilation:
+  Make sure you have scons installed, then:
+
+    $ scons programme
+
+  A number of compilation options are available if you run into issues. To see
+  them, use:
+
+    $ scons --help
+
+Installation:
+  use this command to install regularly (usually into /):
+
+    $ scons install
+
+  To add an installation-only prefix, use:
+
+    $ scons destdir=/some/prefix install
+
+CONTACT:
+  Best bet is IRC: freenode #kyuba

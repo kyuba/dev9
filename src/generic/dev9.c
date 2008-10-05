@@ -437,7 +437,7 @@ int main(int argc, char **argv, char **envv) {
             switch (context->pid)
             {
                 case -1:
-                    exit (25);
+                    exit (30);
                 case 0:
                     close (fdi[0]);
                     close (fdo[1]);
