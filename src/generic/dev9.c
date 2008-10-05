@@ -461,7 +461,7 @@ int main(int argc, char **argv, char **envv) {
                 case 0:
                     close (fdi[0]);
                     close (fdo[1]);
-                    mount ("dev9",   "/mnt",     "9p",     0, options);
+                    mount ("dev9",   "/dev",     "9p",     0, options);
                     mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
                     mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
                     exit (0);
