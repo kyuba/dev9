@@ -63,7 +63,13 @@
 #include <pwd.h>
 #include <grp.h>
 
-#define NETLINK_BUFFER (1024*1024*16)
+#ifndef ETCDIR
+#define ETCDIR "/etc/dev9/"
+#endif
+
+#define DEFAULT_RULES ETCDIR "rules.sx"
+
+#define NETLINK_BUFFER (1024*1024*32)
 
 static void connect_to_netlink(struct dfs *);
 
@@ -310,7 +316,7 @@ static void print_help()
              " -m          Automount dev9 over /dev\n"
              " -h          Print this and exit.\n"
              "\n"
-             " rules-file  The rules file to use, defaults to /etc/dev9/rules.sx\n"
+             " rules-file  The rules file to use, defaults to " DEFAULT_RULES "\n"
              " socket-name The socket to use, defaults to\n"
              "\n"
              "Either -s or -S must be specified.\n"
@@ -328,6 +334,7 @@ int main(int argc, char **argv, char **envv) {
     char mount_self = 0;
     char *use_socket = (char *)0;
     char next_socket = 0;
+    char had_rules_file = 0;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
@@ -356,16 +363,25 @@ int main(int argc, char **argv, char **envv) {
         {
             use_socket = argv[i];
             next_socket = 0;
+            continue;
         }
 
         multiplex_add_sexpr(sx_open_io (io_open_read (argv[i]), io_open (-1)),
                             on_rules_read, (void *)0);
         while (multiplex() != mx_nothing_to_do);
+        had_rules_file = 1;
     }
 
     if ((use_socket == (char *)0) && (use_stdio == 0))
     {
         print_help();
+    }
+
+    if (!had_rules_file)
+    {
+        multiplex_add_sexpr(sx_open_io (io_open_read (DEFAULT_RULES), io_open (-1)),
+                            on_rules_read, (void *)0);
+        while (multiplex() != mx_nothing_to_do);
     }
 
     while ((u = getpwent())) dfs_update_user (u->pw_name, u->pw_uid);
