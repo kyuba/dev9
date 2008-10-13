@@ -302,15 +302,32 @@ static struct sexpr * dev9_rules_apply_deep
 
                     if (dname != (char *)0)
                     {
+                        struct tree_node *n
+                                = tree_get_node_string (dir->nodes, dname);
+
                         if (eolp(sxcdr))
                         {
-                            struct dfs_device *d =
-                                dfs_mk_device (dir, dname,
-                                               state->block_device ?
-                                                       dfs_block_device :
-                                                       dfs_character_device,
-                                               state->majour,
-                                               state->minor);
+                            struct dfs_device *d;
+                            if (n == (struct tree_node *)0) {
+                                d = dfs_mk_device (dir, dname,
+                                                   state->block_device ?
+                                                           dfs_block_device :
+                                                           dfs_character_device,
+                                                   state->majour,
+                                                   state->minor);
+                            } else {
+                                d = (struct dfs_device *)node_get_value (n);
+
+                                if (d->c.type != dft_device) {
+                                    return sx_false;
+                                }
+
+                                d->majour = state->majour;
+                                d->minor = state->minor;
+                                d->type = state->block_device ?
+                                              dfs_block_device :
+                                              dfs_character_device;
+                            }
 
                             d->c.uid  = state->user;
                             d->c.muid = state->user;
@@ -319,8 +336,6 @@ static struct sexpr * dev9_rules_apply_deep
                         }
                         else
                         {
-                            struct tree_node *n
-                                    = tree_get_node_string (dir->nodes, dname);
                             if (n == (struct tree_node *)0) {
                                 dir = dfs_mk_directory(dir, dname);
                                 dir->c.mode |= 0111;
