@@ -429,8 +429,18 @@ int main(int argc, char **argv, char **envv) {
     }
     else
     {
-        if (daemon(0, 0) == -1)
-            perror ("dev9: could not fork to the background");
+        struct exec_context *context
+                = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
+
+        switch (context->pid)
+        {
+            case -1:
+                exit (11);
+            case 0:
+                break;
+            default:
+                exit (0);
+        }
     }
 
     if (use_socket != (char *)0) {
