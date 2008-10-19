@@ -56,8 +56,8 @@ enum dev9_opcodes {
     dev9op_set_mode
 };
 
-void dev9_rules_add (struct sexpr *, struct sexpr_io *);
-void dev9_rules_apply (struct sexpr *, struct dfs *);
+void dev9_rules_add (sexpr, struct sexpr_io *);
+void dev9_rules_apply (sexpr, struct dfs *);
 
 #endif
 

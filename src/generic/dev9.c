@@ -178,7 +178,7 @@ static void on_netlink_read(struct io *io, void *fsv)
          *i = b,
          *max = (b + io->length),
          frag_boundary = 0;
-    struct sexpr *attributes = sx_end_of_list;
+    sexpr attributes = sx_end_of_list;
 
     while (i < max)
     {
@@ -302,7 +302,7 @@ static void connect_to_netlink(struct dfs *fs)
     }
 }
 
-static void on_rules_read(struct sexpr *sx, struct sexpr_io *io, void *unused)
+static void on_rules_read(sexpr sx, struct sexpr_io *io, void *unused)
 {
     dev9_rules_add (sx, io);
 }

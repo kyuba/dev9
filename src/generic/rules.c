@@ -55,7 +55,7 @@ static struct rule {
             struct rule *expression;
             struct rule *rules;
         } when;
-        struct sexpr *list;
+        sexpr list;
         const char *string;
         signed long int integer;
     } parameters;
@@ -74,13 +74,13 @@ struct state
     int_16 minor;
 };
 
-static struct sexpr *lookup_symbol (struct sexpr *environ, struct sexpr *key)
+static sexpr lookup_symbol (sexpr environ, sexpr key)
 {
-    struct sexpr *cur = environ;
+    sexpr cur = environ;
 
     while (consp(cur))
     {
-        struct sexpr *sx_car = car(cur);
+        sexpr sx_car = car(cur);
 
         if (consp(sx_car))
         {
@@ -97,22 +97,22 @@ static struct sexpr *lookup_symbol (struct sexpr *environ, struct sexpr *key)
 }
 
 static void dev9_rules_add_deep
-        (struct sexpr *sx, struct sexpr_io *io, struct rule **currule)
+        (sexpr sx, struct sexpr_io *io, struct rule **currule)
 {
     struct rule *rule;
     static struct memory_pool pool = MEMORY_POOL_INITIALISER (sizeof (struct rule));
     static struct memory_pool rxpool = MEMORY_POOL_INITIALISER (sizeof (regex_t));
-    static struct sexpr *sym_match = (struct sexpr *)0;
-    static struct sexpr *sym_when = (struct sexpr *)0;
-    static struct sexpr *sym_mknod = (struct sexpr *)0;
-    static struct sexpr *sym_set_group = (struct sexpr *)0;
-    static struct sexpr *sym_set_user = (struct sexpr *)0;
-    static struct sexpr *sym_set_attribute = (struct sexpr *)0;
-    static struct sexpr *sym_set_mode = (struct sexpr *)0;
-    static struct sexpr *sym_block_device = (struct sexpr *)0;
-    struct sexpr *sxcar, *sxcdr;
+    static sexpr sym_match = (sexpr )0;
+    static sexpr sym_when = (sexpr )0;
+    static sexpr sym_mknod = (sexpr )0;
+    static sexpr sym_set_group = (sexpr )0;
+    static sexpr sym_set_user = (sexpr )0;
+    static sexpr sym_set_attribute = (sexpr )0;
+    static sexpr sym_set_mode = (sexpr )0;
+    static sexpr sym_block_device = (sexpr )0;
+    sexpr sxcar, sxcdr;
 
-    if (sym_match == (struct sexpr *)0)
+    if (sym_match == (sexpr )0)
     {
         sym_match         = make_symbol ("match");
         sym_when          = make_symbol ("when");
@@ -135,18 +135,18 @@ static void dev9_rules_add_deep
     rule->next = (struct rule *)0;
 
     if (truep(equalp(sxcar, sym_match))) {
-        struct sexpr *tsx = sxcdr;
+        sexpr tsx = sxcdr;
         rule->opcode = dev9op_match;
         rule->parameters.list = sxcdr;
 
         while (consp(tsx))
         {
-            struct sexpr *tsx_car = car (tsx);
+            sexpr tsx_car = car (tsx);
 
             if (consp(tsx_car))
             {
-                struct sexpr *tsxc_car = car (tsx_car);
-                struct sexpr *tsxc_cdr = cdr (tsx_car);
+                sexpr tsxc_car = car (tsx_car);
+                sexpr tsxc_cdr = cdr (tsx_car);
 
                 if (symbolp(tsxc_car) && stringp (tsxc_cdr))
                 {
@@ -195,11 +195,11 @@ static void dev9_rules_add_deep
         rule->parameters.string
                 = str_immutable_unaligned (sx_string(car(sxcdr)));
     } else if (truep(equalp(sxcar, sym_set_attribute))) {
-        struct sexpr *tsx = sxcdr;
+        sexpr tsx = sxcdr;
 
         while (consp(tsx))
         {
-            struct sexpr *tsx_car = car (tsx);
+            sexpr tsx_car = car (tsx);
 
             if (truep(equalp(tsx_car, sym_block_device)))
             {
@@ -223,31 +223,31 @@ static void dev9_rules_add_deep
     (*currule) = rule;
 }
 
-static struct sexpr * dev9_rules_apply_deep
-        (struct sexpr *sx, struct dfs *fs, struct rule *rule,
+static sexpr  dev9_rules_apply_deep
+        (sexpr sx, struct dfs *fs, struct rule *rule,
          struct state *state)
 {
     switch (rule->opcode)
     {
         case dev9op_match:
             {
-                struct sexpr *tsx = rule->parameters.list;
+                sexpr tsx = rule->parameters.list;
 
                 while (consp(tsx))
                 {
-                    struct sexpr *tsx_car = car (tsx);
+                    sexpr tsx_car = car (tsx);
 
                     if (consp(tsx_car))
                     {
-                        struct sexpr *tsxc_car = car (tsx_car);
-                        struct sexpr *tsxc_cdr = cdr (tsx_car);
+                        sexpr tsxc_car = car (tsx_car);
+                        sexpr tsxc_cdr = cdr (tsx_car);
 
                         if (symbolp(tsxc_car) && stringp (tsxc_cdr))
                         {
                             struct tree_node *n
                                     = tree_get_node_string (&regex_tree, (char *)sx_string(tsxc_cdr));
                             regex_t *rx;
-                            struct sexpr *against;
+                            sexpr against;
 
                             if (n == (void *)0) return sx_false;
 
@@ -279,17 +279,17 @@ static struct sexpr * dev9_rules_apply_deep
         case dev9op_mknod:
             {
                 struct dfs_directory *dir = fs->root;
-                struct sexpr *cur = rule->parameters.list;
+                sexpr cur = rule->parameters.list;
 
                 while (consp(cur) && !eolp(cur))
                 {
-                    struct sexpr *sxcar = car (cur);
-                    struct sexpr *sxcdr = cdr (cur);
+                    sexpr sxcar = car (cur);
+                    sexpr sxcdr = cdr (cur);
                     char *dname = (char *)0;
 
                     if (symbolp(sxcar))
                     {
-                        struct sexpr *sxx = lookup_symbol (sx, sxcar);
+                        sexpr sxx = lookup_symbol (sx, sxcar);
 
                         if (stringp(sxx)) {
                             dname = (char *)sx_string(sxx);
@@ -368,18 +368,18 @@ static struct sexpr * dev9_rules_apply_deep
     return sx_false;
 }
 
-void dev9_rules_add (struct sexpr *sx, struct sexpr_io *io)
+void dev9_rules_add (sexpr sx, struct sexpr_io *io)
 {
     dev9_rules_add_deep (sx, io, &rules_list);
 }
 
-void dev9_rules_apply (struct sexpr *sx, struct dfs *fs)
+void dev9_rules_apply (sexpr sx, struct dfs *fs)
 {
-    static struct sexpr *sym_devpath   = (struct sexpr *)0;
-    static struct sexpr *sym_majour    = (struct sexpr *)0;
-    static struct sexpr *sym_minor     = (struct sexpr *)0;
-    static struct sexpr *sym_subsystem = (struct sexpr *)0;
-    struct sexpr *tsx;
+    static sexpr sym_devpath   = (sexpr )0;
+    static sexpr sym_majour    = (sexpr )0;
+    static sexpr sym_minor     = (sexpr )0;
+    static sexpr sym_subsystem = (sexpr )0;
+    sexpr tsx;
     struct rule *rule = rules_list;
     struct state state =
     {
@@ -391,7 +391,7 @@ void dev9_rules_apply (struct sexpr *sx, struct dfs *fs)
         .minor        = 0
     };
 
-    if (sym_devpath == (struct sexpr *)0)
+    if (sym_devpath == (sexpr )0)
     {
         sym_devpath   = make_symbol ("DEVPATH");
         sym_majour    = make_symbol ("MAJOR");
