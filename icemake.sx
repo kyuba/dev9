@@ -1,7 +1,7 @@
 (programme "dev9" hosted libcurie
   (name "dev9")
   (description "/dev management programme for Linux")
-  (version 1)
+  (version "1")
 
   (libraries "duat")
 
