@@ -8,40 +8,40 @@
 ; Also note that match uses POSIX extended regular expressions for matching.
 
 ;; tag block devices
-(when (match (SUBSYSTEM . "^block$")) (set-attribute block-device))
+(when (match (SUBSYSTEM . "block")) (set-attribute block-device))
 
 ;; tag devices with group names
-(when (match (SUBSYSTEM . "^(sound|snd)$")) (set-group "audio"))
-(when (match (SUBSYSTEM . "^block$")) (set-group "disk"))
-(when (match (DEV-BASE-PATH . "^(vcs[0-9]*|vcsa[0-9]*)$")) (set-group "tty"))
-(when (match (DEV-BASE-PATH . "^ttyS[0-9]*$")) (set-group "uucp"))
+(when (match (SUBSYSTEM . "sound|snd")) (set-group "audio"))
+(when (match (SUBSYSTEM . "block")) (set-group "disk"))
+(when (match (DEV-BASE-PATH . "vcsa?[0-9]*")) (set-group "tty"))
+(when (match (DEV-BASE-PATH . "ttyS[0-9]*")) (set-group "uucp"))
 
 (when (match (DEV-BASE-PATH .
-              "^(card[0-9]*|nvidia[0-9]*|3dfx[0-9]*|fb[0-9]*)$"))
+              "(card|nvidia|3dfx|fb)[0-9]*"))
       (set-group "video"))
-(when (match (SUBSYSTEM . "^dvb$")) (set-group "video"))
-(when (match (SUBSYSTEM . "^video4linux$")) (set-group "video"))
+(when (match (SUBSYSTEM . "dvb")) (set-group "video"))
+(when (match (SUBSYSTEM . "video4linux")) (set-group "video"))
 
-(when (match (DEVPATH_BASE . "^vboxdrv$")) (set-group "vboxusers"))
+(when (match (DEVPATH_BASE . "vboxdrv")) (set-group "vboxusers"))
 
 ;; node modes
 
 ;; example: changing file modes (note: set-mode needs a decimal integer)
-; (when (match (SUBSYSTEM . "^block$")) (set-mode 432))
+; (when (match (SUBSYSTEM . "block")) (set-mode 432))
 
-(when (match (SUBSYSTEM . "^misc$")
-             (DEV-BASE-PATH . "^tun$")) (set-mode 438)) ; 0666 in decimal
-(when (match (SUBSYSTEM . "^ppp$")) (set-mode 384)) ; 0600 in decimal
-(when (match (SUBSYSTEM . "^tty$")) (set-mode 438))
-(when (match (DEV-BASE-PATH . "^(zero|null|ptmx|random|urandom|tty|fuse)$"))
+(when (match (SUBSYSTEM . "misc")
+             (DEV-BASE-PATH . "tun")) (set-mode 438)) ; 0666 in decimal
+(when (match (SUBSYSTEM . "ppp")) (set-mode 384)) ; 0600 in decimal
+(when (match (SUBSYSTEM . "tty")) (set-mode 438))
+(when (match (DEV-BASE-PATH . "zero|null|ptmx|random|urandom|tty|fuse"))
       (set-mode 438))
-(when (match (SUBSYSTEM . "^input$")) (set-mode 416)) ; 0640
-(when (match (SUBSYSTEM . "^input$")
-             (DEV-BASE-PATH . "^js")) (set-mode 420)) ; 0644
-(when (match (DEV-BASE-PATH . "^rtc[0-9]?$")) (set-mode 420)) ; 0644
+(when (match (SUBSYSTEM . "input")) (set-mode 416)) ; 0640
+(when (match (SUBSYSTEM . "input")
+             (DEV-BASE-PATH . "js")) (set-mode 420)) ; 0644
+(when (match (DEV-BASE-PATH . "rtc[0-9]?")) (set-mode 420)) ; 0644
 
 ;; example: create nodes only when SUBSYSTEM matches something
-; (when (match (SUBSYSTEM . "^(block|tty|misc)$")) (mknod DEV-BASE-PATH))
+; (when (match (SUBSYSTEM . "(block|tty|misc)")) (mknod DEV-BASE-PATH))
 
 ;; this shouldn't hurt
 (mknod DEV-BASE-PATH)
@@ -49,35 +49,35 @@
 ;; some common rules
 
 ; audio rules
-(when (match (SUBSYSTEM . "^(sound|snd)$")
-             (DEV-BASE-PATH . "^(dsp0)$")) (mknod "dsp"))
-(when (match (SUBSYSTEM . "^(sound|snd)$")
-             (DEV-BASE-PATH . "^(mixer0)$")) (mknod "mixer"))
-(when (match (SUBSYSTEM . "^(sound|snd)$")
-             (DEV-BASE-PATH . "^(audio0)$")) (mknod "audio"))
-(when (match (SUBSYSTEM . "^(sound|snd)$")) (mknod "snd" DEV-BASE-PATH))
+(when (match (SUBSYSTEM . "sound|snd")
+             (DEV-BASE-PATH . "dsp0")) (mknod "dsp"))
+(when (match (SUBSYSTEM . "sound|snd")
+             (DEV-BASE-PATH . "mixer0")) (mknod "mixer"))
+(when (match (SUBSYSTEM . "sound|snd")
+             (DEV-BASE-PATH . "audio0")) (mknod "audio"))
+(when (match (SUBSYSTEM . "sound|snd")) (mknod "snd" DEV-BASE-PATH))
 
-(when (match (DEV-BASE-PATH . "^(card[0-9]*|nvidia[0-9]*|3dfx[0-9]*)$"))
+(when (match (DEV-BASE-PATH . "(card|nvidia|3dfx)[0-9]*)"))
       (mknod "dri" DEV-BASE-PATH))
-(when (match (DEV-BASE-PATH . "^(fb0)$")) (mknod "fb"))
+(when (match (DEV-BASE-PATH . "(fb0)")) (mknod "fb"))
 
 ; network rules
-(when (match (SUBSYSTEM . "^misc$")
-             (DEV-BASE-PATH . "^tun$")) (mknod "net" "tun"))
+(when (match (SUBSYSTEM . "misc")
+             (DEV-BASE-PATH . "tun")) (mknod "net" "tun"))
 
 ; video rules
-(when (match (SUBSYSTEM . "^video4linux$"))
+(when (match (SUBSYSTEM . "video4linux"))
       (mknod "v4l" DEV-BASE-PATH))
 
-(when (match (DEV-BASE-PATH . "^(video0)$")) (mknod "video"))
-(when (match (DEV-BASE-PATH . "^(radio0)$")) (mknod "radio"))
-(when (match (DEV-BASE-PATH . "^(vbi0)$"))   (mknod "vbi"))
+(when (match (DEV-BASE-PATH . "video0")) (mknod "video"))
+(when (match (DEV-BASE-PATH . "radio0")) (mknod "radio"))
+(when (match (DEV-BASE-PATH . "vbi0"))   (mknod "vbi"))
 
 
 ; misc
 
-(when (match (SUBSYSTEM . "^input$"))        (mknod "input" DEV-BASE-PATH))
-(when (match (DEV-BASE-PATH . "^rtc0$"))     (mknod "rtc"))
+(when (match (SUBSYSTEM . "input"))        (mknod "input" DEV-BASE-PATH))
+(when (match (DEV-BASE-PATH . "rtc0"))     (mknod "rtc"))
 
 ;; catch-all, just in case
-(when (match (SUBSYSTEM . "^.+$")) (mknod ".all" SUBSYSTEM DEV-BASE-PATH))
+(when (match (SUBSYSTEM . ".+")) (mknod ".all" SUBSYSTEM DEV-BASE-PATH))

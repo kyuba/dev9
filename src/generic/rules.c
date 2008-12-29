@@ -42,10 +42,23 @@
 #include <duat/filesystem.h>
 #include <string.h>
 #include <curie/immutable.h>
-
-#include <regex.h>
+#include <curie/regex.h>
 
 static struct tree regex_tree = TREE_INITIALISER;
+
+define_symbol (sym_devpath,       "DEVPATH");
+define_symbol (sym_devbasepath,   "DEV-BASE-PATH");
+define_symbol (sym_majour,        "MAJOR");
+define_symbol (sym_minor,         "MINOR");
+define_symbol (sym_subsystem,     "SUBSYSTEM");
+define_symbol (sym_match,         "match");
+define_symbol (sym_when,          "when");
+define_symbol (sym_mknod,         "mknod");
+define_symbol (sym_set_group,     "set-group");
+define_symbol (sym_set_user,      "set-user");
+define_symbol (sym_set_attribute, "set-attribute");
+define_symbol (sym_set_mode,      "set-mode");
+define_symbol (sym_block_device,  "block-device");
 
 static struct rule {
     enum dev9_opcodes opcode;
@@ -101,28 +114,7 @@ static void dev9_rules_add_deep
 {
     struct rule *rule;
     static struct memory_pool pool = MEMORY_POOL_INITIALISER (sizeof (struct rule));
-    static struct memory_pool rxpool = MEMORY_POOL_INITIALISER (sizeof (regex_t));
-    static sexpr sym_match = (sexpr )0;
-    static sexpr sym_when = (sexpr )0;
-    static sexpr sym_mknod = (sexpr )0;
-    static sexpr sym_set_group = (sexpr )0;
-    static sexpr sym_set_user = (sexpr )0;
-    static sexpr sym_set_attribute = (sexpr )0;
-    static sexpr sym_set_mode = (sexpr )0;
-    static sexpr sym_block_device = (sexpr )0;
     sexpr sxcar, sxcdr;
-
-    if (sym_match == (sexpr )0)
-    {
-        sym_match         = make_symbol ("match");
-        sym_when          = make_symbol ("when");
-        sym_mknod         = make_symbol ("mknod");
-        sym_set_group     = make_symbol ("set-group");
-        sym_set_user      = make_symbol ("set-user");
-        sym_set_attribute = make_symbol ("set-attribute");
-        sym_set_mode      = make_symbol ("set-mode");
-        sym_block_device  = make_symbol ("block-device");
-    }
 
     if (!consp(sx)) {
         return;
@@ -150,14 +142,10 @@ static void dev9_rules_add_deep
 
                 if (symbolp(tsxc_car) && stringp (tsxc_cdr))
                 {
-                    regex_t *rx = (regex_t *)get_pool_mem (&rxpool);
-                    if (regcomp (rx, sx_string(tsxc_cdr),
-                                 REG_EXTENDED | REG_NOSUB) == 0)
-                    {
-                        tree_add_node_string_value
-                                (&regex_tree, (char *)sx_string(tsxc_cdr),
-                                  (void *)rx);
-                    }
+                    struct graph *g = rx_compile_sx (tsxc_cdr);
+
+                    tree_add_node_string_value
+                            (&regex_tree, (char *)sx_string(tsxc_cdr), (void *)g);
                 }
             }
 
@@ -246,7 +234,7 @@ static sexpr  dev9_rules_apply_deep
                         {
                             struct tree_node *n
                                     = tree_get_node_string (&regex_tree, (char *)sx_string(tsxc_cdr));
-                            regex_t *rx;
+                            struct graph *rx;
                             sexpr against;
 
                             if (n == (void *)0) return sx_false;
@@ -255,10 +243,10 @@ static sexpr  dev9_rules_apply_deep
 
                             if (!stringp(against)) return sx_false;
 
-                            rx = (regex_t *)node_get_value (n);
+                            rx = (struct graph *)node_get_value (n);
 
-                            if (regexec(rx, sx_string(against), 0, (void *)0, 0)
-                                != 0) return sx_false;
+                            if (falsep(rx_match_sx (rx, against)))
+                                return sx_false;
                         }
                     }
 
@@ -375,10 +363,6 @@ void dev9_rules_add (sexpr sx, struct sexpr_io *io)
 
 void dev9_rules_apply (sexpr sx, struct dfs *fs)
 {
-    static sexpr sym_devpath   = (sexpr )0;
-    static sexpr sym_majour    = (sexpr )0;
-    static sexpr sym_minor     = (sexpr )0;
-    static sexpr sym_subsystem = (sexpr )0;
     sexpr tsx;
     struct rule *rule = rules_list;
     struct state state =
@@ -390,14 +374,6 @@ void dev9_rules_apply (sexpr sx, struct dfs *fs)
         .majour       = 0,
         .minor        = 0
     };
-
-    if (sym_devpath == (sexpr )0)
-    {
-        sym_devpath   = make_symbol ("DEVPATH");
-        sym_majour    = make_symbol ("MAJOR");
-        sym_minor     = make_symbol ("MINOR");
-        sym_subsystem = make_symbol ("SUBSYSTEM");
-    }
 
     tsx = lookup_symbol (sx, sym_devpath);
     if (stringp(tsx))
@@ -411,7 +387,7 @@ void dev9_rules_apply (sexpr sx, struct dfs *fs)
             y++;
         }
 
-        sx = cons(cons (make_symbol("DEV-BASE-PATH"), make_string(y)), sx);
+        sx = cons(cons (sym_devbasepath, make_string(y)), sx);
     }
 
     tsx = lookup_symbol (sx, sym_majour);
