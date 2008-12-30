@@ -1,9 +1,9 @@
-(programme "dev9" hosted libcurie
+(programme "dev9" libcurie
   (name "dev9")
   (description "/dev management programme for Linux")
   (version "3")
 
-  (libraries "duat")
+  (libraries "duat" "syscall")
 
   (data "dev9" "rules.sx")
 

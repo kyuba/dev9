@@ -38,13 +38,23 @@
 
 #define _BSD_SOURCE
 
+#include <curie/main.h>
 #include <curie/multiplex.h>
 #include <curie/memory.h>
+#include <curie/directory.h>
 
 #include <duat/9p-server.h>
 #include <duat/filesystem.h>
 #include <duat/sxfs.h>
 
+#include <syscall/syscall.h>
+
+#include <dev9/rules.h>
+
+#include <asm/fcntl.h>
+#include <linux/netlink.h>
+
+#if 0
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -60,10 +70,28 @@
 
 #include <sys/mount.h>
 
-#include <dev9/rules.h>
-
 #include <pwd.h>
 #include <grp.h>
+#endif
+
+#define HELPTEXT\
+        "dev9-1\n"\
+        "Usage: dev9 [-opmih] [rules-file ...] [-s socket-name]\n"\
+        "\n"\
+        " -o          Talk 9p on stdio\n"\
+        " -s          Talk 9p on the supplied socket-name\n"\
+        " -p          Mount /proc and /sys\n"\
+        " -m          Automount dev9 over /dev\n"\
+        " -i          Initialise common nodes under /dev.\n"\
+        " -h          Print this and exit.\n"\
+        "\n"\
+        " rules-file  The rules file to use, defaults to " DEFAULT_RULES "\n"\
+        " socket-name The socket to use, defaults to\n"\
+        "\n"\
+        "One of -S, -s or -m must be specified.\n"\
+        "\n"\
+        "The programme will automatically fork to the background, unless -o is used.\n"\
+        "\n"\
 
 #ifndef ETCDIR
 #define ETCDIR "/etc/dev9/"
@@ -78,94 +106,31 @@ static void connect_to_netlink(struct dfs *);
 
 static void *rm_recover(unsigned long int s, void *c, unsigned long int l)
 {
-    exit(22);
+    cexit(22);
     return (void *)0;
 }
 
 static void *gm_recover(unsigned long int s)
 {
-    exit(23);
+    cexit(23);
     return (void *)0;
 }
 
-static int_16 joinpath(char *path1, char *path2, char **path)
-{
-    char *rv = NULL;
-    int tlen = strlen(path1);
+static void ping_for_uevents (const char *dir) {
+    sexpr ueventfiles = read_directory (dir);
 
-    if (path1[tlen] == '/') {
-        tlen += strlen(path2) + 1;
-        rv = aalloc(tlen);
-
-        snprintf(rv, tlen, "%s%s", path1, path2);
-    } else {
-        tlen += strlen(path2) + 2;
-        rv = aalloc(tlen);
-
-        snprintf(rv, tlen, "%s/%s", path1, path2);
-    }
-
-    *path = rv;
-    return (int_16)tlen;
-}
-
-static void ping_for_uevents (char *dir, char depth) {
-    struct stat st;
-    int_16 len;
-
-    if (!dir || stat (dir, &st)) return;
-
-    if (S_ISLNK (st.st_mode)) {
-        return;
-    }
-
-    if (S_ISDIR (st.st_mode)) {
-        DIR *d;
-        struct dirent *e;
-
-        d = opendir (dir);
-        if (d != NULL) {
-            while ((e = readdir (d))) {
-                if ((strcmp (e->d_name, ".") == 0) ||
-                    (strcmp (e->d_name, "..") == 0))
-                {
-                    continue;
-                }
-
-                char *f;
-                len = joinpath ((char *)dir, e->d_name, &f);
-
-                if (len > 0) {
-                    if (!stat (f, &st) && !S_ISLNK (st.st_mode) &&
-                        S_ISDIR (st.st_mode))
-                    {
-                        if (depth > 0) {
-                            ping_for_uevents (f, depth - 1);
-                        }
-                    }
-
-                    afree (len, f);
-                }
-            }
-
-            closedir(d);
-        }
-    }
-
-    char *x;
-    len = joinpath (dir, "uevent", &x);
-
-    if (len > 0)
+    for (sexpr x = ueventfiles; consp(x); x = cdr (x))
     {
-        int f = open (x, O_WRONLY);
+        sexpr xcar = car(x);
+        int f = sys_open (sx_string(xcar), O_WRONLY, 0);
 
-        if (f > 0) {
-            write (f, "add\n", 4);
-            close (f);
+        if (f >= 0) {
+            sys_write (f, "add\n", 4);
+            sys_close (f);
         }
-
-        afree (len, x);
     }
+
+    sx_destroy (ueventfiles);
 }
 
 static void on_netlink_read(struct io *io, void *fsv)
@@ -236,50 +201,47 @@ static void on_netlink_read(struct io *io, void *fsv)
 
 static void on_netlink_close(struct io *io, void *ignored)
 {
-    exit(24);
+    cexit(24);
 /*    connect_to_netlink();*/
 }
 
 static void mx_on_subprocess_death(struct exec_context *cx, void *d)
 {
     if (cx->exitstatus != 0)
-        exit (26);
+        cexit (26);
 }
 
 static void connect_to_netlink(struct dfs *fs)
 {
-    struct sockaddr_nl nls;
+    struct sockaddr_nl nls = { 0, 0, 0, 0 };
     int fd;
     struct io *io;
     int newlength = NETLINK_BUFFER;
     struct exec_context *context;
 
-    memset(&nls, 0, sizeof(struct sockaddr_nl));
     nls.nl_family = AF_NETLINK;
-    nls.nl_pid = getpid();
+    nls.nl_pid = sys_getpid();
     nls.nl_groups = -1;
 
-    fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
+    fd = sys_socket(PF_NETLINK, SOCK_DGRAM, NETLINK_KOBJECT_UEVENT);
 
-    if (fd == -1)
-    {
-        exit (17);
+    if (fd < 0) { cexit (17); }
+
+    if (sys_bind(fd, (void *)&nls, sizeof(struct sockaddr_nl)) < 0) {
+        cexit (18);
     }
 
-    if (bind(fd, (void *)&nls, sizeof(struct sockaddr_nl))) {
-        exit (18);
+    if (sys_setsockopt (fd, SOL_SOCKET, SO_RCVBUF, (char *)&newlength,
+                        sizeof (int)) < 0) {
+        cexit(19);
     }
 
-    if (setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &newlength, sizeof (int))) {
-        exit(19);
+    if (sys_fcntl (fd, F_SETFD, FD_CLOEXEC) < 0) {
+        cexit(20);
     }
 
-    if (fcntl (fd, F_SETFD, FD_CLOEXEC)) {
-        exit(20);
-    }
-
-    if (fcntl(fd, F_SETFL, O_NONBLOCK)) {
-        exit(21);
+    if (sys_fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
+        cexit(21);
     }
 
     io = io_open (fd);
@@ -291,12 +253,10 @@ static void connect_to_netlink(struct dfs *fs)
     switch (context->pid)
     {
         case -1:
-            exit (25);
+            cexit (25);
         case 0:
-            ping_for_uevents("/sys/bus", 2);
-            ping_for_uevents("/sys/class", 2);
-            ping_for_uevents("/sys/block", 2);
-            exit (0);
+            ping_for_uevents ("/sys/(bus|class|block)/.+/.+/uevent");
+            cexit (0);
         default:
             multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
     }
@@ -309,32 +269,27 @@ static void on_rules_read(sexpr sx, struct sexpr_io *io, void *unused)
 
 static void print_help()
 {
-    fprintf (stdout,
-             "dev9-1\n"
-             "Usage: dev9 [-opmih] [rules-file ...] [-s socket-name]\n"
-             "\n"
-             " -o          Talk 9p on stdio\n"
-             " -s          Talk 9p on the supplied socket-name\n"
-             " -p          Mount /proc and /sys\n"
-             " -m          Automount dev9 over /dev\n"
-             " -i          Initialise common nodes under /dev.\n"
-             " -h          Print this and exit.\n"
-             "\n"
-             " rules-file  The rules file to use, defaults to " DEFAULT_RULES "\n"
-             " socket-name The socket to use, defaults to\n"
-             "\n"
-             "One of -S, -s or -m must be specified.\n"
-             "\n"
-             "The programme will automatically fork to the background, unless -o is used.\n"
-             "\n");
-    exit(0);
+    sys_write (1, HELPTEXT, sizeof (HELPTEXT));
+    cexit(0);
 }
 
-int main(int argc, char **argv, char **envv) {
-    int i;
-    struct dfs *fs;
+void initialise_users_and_groups()
+{
+/*! \todo parse passwd/group files manually */
+/*
     struct group *g;
     struct passwd *u;
+
+    while ((u = getpwent())) dfs_update_user (u->pw_name, u->pw_uid);
+    endpwent();
+    while ((g = getgrent())) dfs_update_group (g->gr_name, g->gr_gid);
+    endgrent();
+*/
+}
+
+int cmain() {
+    int i;
+    struct dfs *fs;
     char use_stdio = 0;
     char mount_self = 0;
     char *use_socket = (char *)0;
@@ -347,17 +302,17 @@ int main(int argc, char **argv, char **envv) {
 
     multiplex_sexpr();
 
-    for (i = 1; i < argc; i++) {
-        if (argv[i][0] == '-')
+    for (i = 1; curie_argv[i]; i++) {
+        if (curie_argv[i][0] == '-')
         {
             int j;
-            for (j = 1; argv[i][j] != (char)0; j++) {
-                switch (argv[i][j])
+            for (j = 1; curie_argv[i][j] != (char)0; j++) {
+                switch (curie_argv[i][j])
                 {
                     case 'o': use_stdio = 1; break;
                     case 'p':
-                        mount ("proc", "/proc", "proc", 0, (char *)0);
-                        mount ("sys", "/sys", "sysfs", 0, (char *)0);
+                        sys_mount ("proc", "/proc", "proc", 0, (char *)0);
+                        sys_mount ("sys", "/sys", "sysfs", 0, (char *)0);
                         break;
                     case 'i': initialise_common = 1; break;
                     case 'm': mount_self = 1; break;
@@ -371,12 +326,13 @@ int main(int argc, char **argv, char **envv) {
 
         if (next_socket)
         {
-            use_socket = argv[i];
+            use_socket = curie_argv[i];
             next_socket = 0;
             continue;
         }
 
-        multiplex_add_sexpr(sx_open_io (io_open_read (argv[i]), io_open (-1)),
+        multiplex_add_sexpr(sx_open_io (io_open_read (curie_argv[i]),
+                                        io_open (-1)),
                             on_rules_read, (void *)0);
         while (multiplex() != mx_nothing_to_do);
         had_rules_file = 1;
@@ -394,10 +350,7 @@ int main(int argc, char **argv, char **envv) {
         while (multiplex() != mx_nothing_to_do);
     }
 
-    while ((u = getpwent())) dfs_update_user (u->pw_name, u->pw_uid);
-    endpwent();
-    while ((g = getgrent())) dfs_update_group (g->gr_name, g->gr_gid);
-    endgrent();
+    initialise_users_and_groups();
 
     fs = dfs_create ();
     fs->root->c.mode |= 0111;
@@ -435,11 +388,11 @@ int main(int argc, char **argv, char **envv) {
         switch (context->pid)
         {
             case -1:
-                exit (11);
+                cexit (11);
             case 0:
                 break;
             default:
-                exit (0);
+                cexit (0);
         }
     }
 
@@ -453,7 +406,7 @@ int main(int argc, char **argv, char **envv) {
         struct io *in, *out;
         int fdi[2], fdo[2];
 
-        if ((pipe (fdi) != -1) && (pipe (fdo) != -1))
+        if ((sys_pipe (fdi) != -1) && (sys_pipe (fdo) != -1))
         {
             struct exec_context *context;
             in  = io_open(fdi[0]);
@@ -461,23 +414,27 @@ int main(int argc, char **argv, char **envv) {
 
             multiplex_add_d9s_io(in, out, fs);
 
+            /*! \todo convert this */
+            /*
             snprintf (options, 256, "access=any,trans=fd,rfdno=%i,wfdno=%i", fdo[0], fdi[1]);
+            */
+            options[0] = 0;
 
             context = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
             switch (context->pid)
             {
                 case -1:
-                    exit (30);
+                    cexit (30);
                 case 0:
-                    close (fdi[0]);
-                    close (fdo[1]);
-                    mount ("dev9",   "/dev",     "9p",     0, options);
-                    mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
-                    mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
-                    exit (0);
+                    sys_close (fdi[0]);
+                    sys_close (fdo[1]);
+                    sys_mount ("dev9",   "/dev",     "9p",     0, options);
+                    sys_mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
+                    sys_mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
+                    cexit (0);
                 default:
-                    close (fdo[0]);
-                    close (fdi[1]);
+                    sys_close (fdo[0]);
+                    sys_close (fdi[1]);
                     multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
             }
         }

@@ -40,7 +40,6 @@
 #include <curie/memory.h>
 #include <curie/tree.h>
 #include <duat/filesystem.h>
-#include <string.h>
 #include <curie/immutable.h>
 #include <curie/regex.h>
 
@@ -379,12 +378,11 @@ void dev9_rules_apply (sexpr sx, struct dfs *fs)
     if (stringp(tsx))
     {
         char *x = (char *)sx_string (tsx);
-        char *y = strrchr (x, '/');
+        char *y = x;
 
-        if (y == (char *)0) {
-            y = x;
-        } else {
-            y++;
+        for (char *c = x; (*c) != 0; c++)
+        {
+            if ((*c) == '/') y = c + 1;
         }
 
         sx = cons(cons (sym_devbasepath, make_string(y)), sx);
