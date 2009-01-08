@@ -398,11 +398,12 @@ int cmain() {
 
     if (use_socket != (char *)0) {
         multiplex_add_d9s_socket (use_socket, fs);
-   }
+    }
 
     if (mount_self)
     {
-        char options[256];
+        static char options[] =
+                "access=any,trans=fd,rfdno=000000,wfdno=000000";
         struct io *in, *out;
         int fdi[2], fdo[2];
 
@@ -414,28 +415,52 @@ int cmain() {
 
             multiplex_add_d9s_io(in, out, fs);
 
-            /*! \todo convert this */
-            /*
-            snprintf (options, 256, "access=any,trans=fd,rfdno=%i,wfdno=%i", fdo[0], fdi[1]);
-            */
-            options[0] = 0;
-
-            context = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
-            switch (context->pid)
+            if (!((fdo[0] > 999999) || (fdi[1] > 999999) ||
+                  (fdo[0] < 1)      || (fdi[1] < 1)))
             {
-                case -1:
-                    cexit (30);
-                case 0:
-                    sys_close (fdi[0]);
-                    sys_close (fdo[1]);
-                    sys_mount ("dev9",   "/dev",     "9p",     0, options);
-                    sys_mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
-                    sys_mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
-                    cexit (0);
-                default:
-                    sys_close (fdo[0]);
-                    sys_close (fdi[1]);
-                    multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
+                int tj, ti, mn, s2 = 44;
+
+                for (tj = 31, ti = fdo[0], mn = 6; ti > 0; tj--, ti /= 10, mn--)
+                {
+                    options[tj] = '0' + (ti % 10);
+                }
+
+                for (tj = 26, ti = tj + mn; options[ti]; tj++, ti++)
+                {
+                    options[tj] = options[ti];
+                }
+                options[tj] = options[ti];
+
+                s2 -= mn;
+
+                for (tj = s2, ti = fdi[1], mn = 6; ti > 0; tj--, ti /= 10, mn--)
+                {
+                    options[tj] = '0' + (ti % 10);
+                }
+
+                for (tj = s2-5, ti = tj + mn; options[ti]; tj++, ti++)
+                {
+                    options[tj] = options[ti];
+                }
+                options[tj] = options[ti];
+
+                context = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
+                switch (context->pid)
+                {
+                    case -1:
+                        cexit (30);
+                    case 0:
+                        sys_close (fdi[0]);
+                        sys_close (fdo[1]);
+                        sys_mount ("dev9",   "/dev",     "9p",     0, options);
+                        sys_mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
+                        sys_mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
+                        cexit (0);
+                    default:
+                        sys_close (fdo[0]);
+                        sys_close (fdi[1]);
+                        multiplex_add_process(context, mx_on_subprocess_death, (void *)0);
+                }
             }
         }
     }
