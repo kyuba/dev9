@@ -54,26 +54,6 @@
 #include <asm/fcntl.h>
 #include <linux/netlink.h>
 
-#if 0
-#include <sys/types.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <asm/types.h>
-#include <sys/socket.h>
-#include <linux/netlink.h>
-
-#include <sys/mount.h>
-
-#include <pwd.h>
-#include <grp.h>
-#endif
-
 #define HELPTEXT\
         "dev9-1\n"\
         "Usage: dev9 [-opmih] [rules-file ...] [-s socket-name]\n"\
