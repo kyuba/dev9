@@ -3,12 +3,12 @@
  *  dev9
  *
  *  Created by Magnus Deininger on 03/10/2008.
- *  Copyright 2008 Magnus Deininger. All rights reserved.
+ *  Copyright 2008, 2009 Magnus Deininger. All rights reserved.
  *
  */
 
 /*
- * Copyright (c) 2008, Magnus Deininger All rights reserved.
+ * Copyright (c) 2008, 2009, Magnus Deininger All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -64,6 +64,7 @@
         " -m          Automount dev9 over /dev\n"\
         " -i          Initialise common nodes under /dev.\n"\
         " -h          Print this and exit.\n"\
+        " -f          Don't detach and creep into the background.\n"\
         "\n"\
         " rules-file  The rules file to use, defaults to " DEFAULT_RULES "\n"\
         " socket-name The socket to use, defaults to\n"\
@@ -253,20 +254,6 @@ static void print_help()
     cexit(0);
 }
 
-void initialise_users_and_groups()
-{
-/*! \todo parse passwd/group files manually */
-/*
-    struct group *g;
-    struct passwd *u;
-
-    while ((u = getpwent())) dfs_update_user (u->pw_name, u->pw_uid);
-    endpwent();
-    while ((g = getgrent())) dfs_update_group (g->gr_name, g->gr_gid);
-    endgrent();
-*/
-}
-
 int cmain() {
     int i;
     struct dfs *fs;
@@ -276,9 +263,13 @@ int cmain() {
     char next_socket = 0;
     char had_rules_file = 0;
     char initialise_common = 0;
+    char o_foreground = 0;
 
     set_resize_mem_recovery_function(rm_recover);
     set_get_mem_recovery_function(gm_recover);
+
+    multiplex_io();
+    dfs_update_ids();
 
     multiplex_sexpr();
 
@@ -297,6 +288,7 @@ int cmain() {
                     case 'i': initialise_common = 1; break;
                     case 'm': mount_self = 1; break;
                     case 's': next_socket = 1; break;
+                    case 'f': o_foreground = 1; break;
                     default:
                         print_help();
                 }
@@ -330,8 +322,6 @@ int cmain() {
         while (multiplex() != mx_nothing_to_do);
     }
 
-    initialise_users_and_groups();
-
     fs = dfs_create ();
     fs->root->c.mode |= 0111;
 
@@ -351,8 +341,7 @@ int cmain() {
 
     connect_to_netlink(fs);
 
-    multiplex_process();
-    multiplex_io();
+    multiplex_all_processes();
 
     multiplex_d9s();
 
@@ -360,7 +349,7 @@ int cmain() {
     {
         multiplex_add_d9s_stdio (fs);
     }
-    else
+    else if (o_foreground == 0)
     {
         struct exec_context *context
                 = execute(EXEC_CALL_NO_IO, (char **)0, (char **)0);
@@ -433,8 +422,11 @@ int cmain() {
                         sys_close (fdi[0]);
                         sys_close (fdo[1]);
                         sys_mount ("dev9",   "/dev",     "9p",     0, options);
-                        sys_mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
-                        sys_mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
+                        if (initialise_common)
+                        {
+                            sys_mount ("devpts", "/dev/pts", "devpts", 0, (void *)0);
+                            sys_mount ("shm",    "/dev/shm", "tmpfs",  0, (void *)0);
+                        }
                         cexit (0);
                     default:
                         sys_close (fdo[0]);
