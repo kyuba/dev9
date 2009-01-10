@@ -142,11 +142,11 @@ static void on_netlink_read(struct io *io, void *fsv)
                 {
                     if (is != b) /* first fragment header: nothing to examine */
                     {
-                        dev9_rules_apply
-                            (cons(make_symbol (fragment_header), attributes),
-                             fs);
+                        attributes = cons(make_symbol (fragment_header), attributes);
+                        dev9_rules_apply (attributes, fs);
                     }
                     fragment_header = is;
+                    sx_destroy (attributes);
                     attributes = sx_end_of_list;
                 }
                 else /* key/value pair */
@@ -170,14 +170,19 @@ static void on_netlink_read(struct io *io, void *fsv)
 
     if (frag_boundary)
     {
-        dev9_rules_apply
-            (cons(make_symbol (fragment_header), attributes), fs);
+        attributes = cons(make_symbol (fragment_header), attributes);
+        dev9_rules_apply (attributes, fs);
         io->position += io->length;
     }
     else
     {
         io->position += (int_pointer)(max - fragment_header);
     }
+
+    sx_destroy (attributes);
+
+    optimise_static_memory_pools();
+    io_flush (io);
 }
 
 static void on_netlink_close(struct io *io, void *ignored)
