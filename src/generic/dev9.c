@@ -42,7 +42,6 @@
 #include <curie/multiplex.h>
 #include <curie/memory.h>
 #include <curie/directory.h>
-#include <curie/network.h>
 
 #include <duat/9p-server.h>
 #include <duat/filesystem.h>
@@ -359,7 +358,6 @@ int cmain() {
     struct dfs_directory *d_dev9 = dfs_mk_directory (fs->root, "dev9");
     struct dfs_file *d_dev9_ctl  = dfs_mk_file (d_dev9, "control", (char *)0,
             (int_8 *)"(nop)\n", 6, (void *)0, (void *)0, on_control_write);
-    struct io *queue_in;
 
     queue_io = io_open_special();
     d_dev9->c.mode     = 0550;
@@ -369,9 +367,7 @@ int cmain() {
     d_dev9_ctl->c.uid  = "dev9";
     d_dev9_ctl->c.gid  = "dev9";
 
-    net_open_loop (&queue_in, &queue_io);
-/*    queue = sx_open_io (queue_io, queue_io);*/
-    queue = sx_open_io (queue_in, queue_io);
+    queue = sx_open_io (queue_io, queue_io);
 
     multiplex_add_sexpr (queue, mx_sx_ctl_queue_read, (void *)0);
 
