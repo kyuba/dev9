@@ -45,7 +45,6 @@
 
 #include <duat/9p-server.h>
 #include <duat/filesystem.h>
-#include <duat/sxfs.h>
 
 #include <syscall/syscall.h>
 
