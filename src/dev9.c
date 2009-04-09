@@ -341,7 +341,7 @@ int cmain() {
         while (multiplex() != mx_nothing_to_do);
     }
 
-    fs = dfs_create ();
+    fs = dfs_create ((void *)0, (void *)0);
     fs->root->c.mode |= 0111;
 
     struct dfs_directory *d_dev9 = dfs_mk_directory (fs->root, "dev9");

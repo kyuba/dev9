@@ -1,0 +1,127 @@
+\documentclass[a4paper,twoside,titlepage]{article}
+\usepackage[top=3cm,bottom=3cm,left=3cm,right=3cm]{geometry}
+\usepackage{url}
+
+\renewcommand\familydefault{\sfdefault}
+
+\title{Dev9}
+\author{Magnus Achim Deininger}
+
+\begin{document}
+\maketitle
+
+\section*{Preface}
+dev9 is a /dev manager for Linux systems. The idea is to implement a 9p2000.u
+filesystem in userspace to do the tasks of the old `devfs' filesystem.
+
+\section*{Introduction}
+Currently, most Linux systems have a number of options for managing the special
+/dev directory. Typical desktop distributions, for example, tend to use the
+`udev' daemon, whereas embedded devices often have a static /dev, or use `mdev'.
+Some desktop distributions may also use udev after the system has booted up, but
+rely on mdev while the system is in an autoconfiguring initramfs. Older or
+modern but more exotic Linux distributions on the other hand may use the special
+`devfs' pseudo-filesystem.
+
+There's a number of issues with these management methods: udev is theoretically
+nice, but it's easily integrated poorly into the system startup sequence, thus
+resulting in poor bootup speeds when used with excessive amounts of shell
+scripting for coldplugging of devices. Static /dev management is very swift, but
+it must be kept up-to-date manually or by periodically running maintenance
+tasks, and it also has the disadvantage of not allowing for nice features like a
+more meaningful device naming scheme. Devfs was up to a nice start, but it
+eventually suffered from bitrot and has been removed from most kernel patchsets.
+Mdev is slick and fast, but it isn't supposed to be kept running to update /dev
+if new devices are added to the system while it is running, which is an issue
+that a static /dev suffers from as well.
+
+To aleviate these issues, we're trying to build a programme that is sort of a
+combination of devfs and udev; that is, a device-managing filesystem implemented
+in userspace, using the 9p2000.u protocol. This has a number of advantages,
+which will be pointed out in this paper.
+
+\section{Concept}
+This chapter will sum up the general idea of how dev9 is going to work, and how
+it's supposed to be used by init programmes and users.
+
+\subsection{Operation}
+Dev9 itself will be a single daemon, although it may be split into multiple
+binaries, depending on whether this provides an advantage with respect to memory
+consumption. Upon initialisation, it will read its configuration files -- on
+disk first, then things off the command-line, to allow for init-specific
+overrides. It will also mount /proc and /sys, as well as its own 9p2000.u
+filesystem under /dev, possibly also loading required kernel modules so these
+operations succeed and forking afterwards, so that the calling programme can
+resume. This operation should be very swift to perform.
+
+The /dev filesystem will, by default, be mounted by the kernel by directly
+passing a set of fds, so that no write access is required anywhere to create an
+appropriate socket.
+
+After that, it will open a netlink connection to the kernel, to listen for
+uevents, and search through /sys to make the kernel emit uevents for hardware
+that is already present. The programme will listen for uevents, and create
+internal data structures to hold the devicefiles in the /dev filesytem as
+needed. While the programme is scanning /sys, it will already answer all queries
+for present nodes in /dev, but it will defer answers to nodes that haven't been
+created yet until the scan is complete.
+
+This method of operation has a number of advantages: It's fairly simple to do,
+algorithmically, and it allows for an `instant-on' /dev filesystem without any
+coordination overhead from other parts of the system, since all the nodes appear
+to be always present right away, at least if the nodes or the directory they
+reside in are known in advance. It also removes the need for any symlinking
+between device nodes, as is used by udev and other management methods. This
+should remove path resolution overhead, especially since there is little to be
+read from devicefiles, other than their access bits and the major/minor numbers.
+
+Another advantage is that being able to defer the replies to access requests for
+device nodes under /dev allows us to implement some of the features devfs had,
+for example it could be used to bring back the device-node based module
+autoloading, which was a quite useful feature to have. Security-wise, it could
+also be used to introduce special security checks when trying to access some
+directories or add certain types of logging.
+
+\subsection{Usage}
+The daemon, or one of its subprogrammes will encapsulate all the mounting logic
+required to mount itself, as well as /proc and /sys. This behaviour will be
+toggleable from the command-line, as well as the configuration files.
+
+The stdin/stdout file descriptors may be put into two modes: either they may be
+used for logging and daemon control, with an S-expression based protocol for
+reduced overhead, or they may be requested to host the 9p2000.u volume.
+
+Init programmes and users likewise, will in most cases only need to call the
+dev9 binary, and it should try to `just work'.
+
+\subsection{Configuration}
+All the configuration data will be stored as S-expressions in textual form,
+because S-expressions are easy, and fast to parse. Unlike XML or other textual
+storage methods, they're also typed and a parser is easily implemented in under
+10k of object code.
+
+Configuration data should be stored in /etc/dev9 or the appropriate location for
+the file hierarchy system in use. Additionally, the daemon will need to accept
+its configuration files via the command-line, so that an init or a user is able
+to adjust the configuration as needed.
+
+\section{OS requirements}
+This project is, by its very definition, strictly Linux-only, so portability is
+not going to be any issue whatsoever, save for portability between different
+Linux kernel versions and architecture-specific issues.
+
+\subsection{Kernel requirements}
+Like any 9p2000.u filesystem, this project will require a running kernel with
+support for the 9p2000.u (network) filesystem protocol. Since patches for this
+have been included in the vanilla 2.6.x kernel sources for a number of versions
+now, this shouldn't pose much of a problem.
+
+Additionally, this programme will require support for sysfs and netlink in the
+kernel. Both of these would also be required for udev to work.
+
+\subsection{Library requirements}
+To achieve minimal code size, dev9 will use the Curie and Duat libraries. This
+should make for extremely small binaries, as well as provide the code needed to
+deal with S-expressions.
+
+\end{document}
