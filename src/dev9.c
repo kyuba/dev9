@@ -78,18 +78,6 @@ static struct io *queue_io;
 
 define_symbol (sym_disable, "disable");
 
-static void *rm_recover(unsigned long int s, void *c, unsigned long int l)
-{
-    cexit(22);
-    return (void *)0;
-}
-
-static void *gm_recover(unsigned long int s)
-{
-    cexit(23);
-    return (void *)0;
-}
-
 static void ping_for_uevents (const char *dir) {
     sexpr ueventfiles = read_directory (dir);
 
@@ -284,8 +272,7 @@ int cmain() {
     char initialise_common = 0;
     char o_foreground = 0;
 
-    set_resize_mem_recovery_function(rm_recover);
-    set_get_mem_recovery_function(gm_recover);
+    terminate_on_allocation_errors();
 
     multiplex_io();
     dfs_update_ids();
