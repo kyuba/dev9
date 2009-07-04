@@ -91,8 +91,6 @@ static void ping_for_uevents (const char *dir) {
             sys_close (f);
         }
     }
-
-    sx_destroy (ueventfiles);
 }
 
 static void on_netlink_read(struct io *io, void *fsv)
@@ -127,7 +125,6 @@ static void on_netlink_read(struct io *io, void *fsv)
                         dev9_rules_apply (attributes, fs);
                     }
                     fragment_header = is;
-                    sx_destroy (attributes);
                     attributes = sx_end_of_list;
                 }
                 else /* key/value pair */
@@ -159,8 +156,6 @@ static void on_netlink_read(struct io *io, void *fsv)
     {
         io->position += (int_pointer)(max - fragment_header);
     }
-
-    sx_destroy (attributes);
 
     optimise_static_memory_pools();
     io_flush (io);
@@ -244,7 +239,6 @@ static void mx_sx_ctl_queue_read (sexpr sx, struct sexpr_io *io, void *aux)
             cexit (0);
         }
     }
-    sx_destroy (sx);
 }
 
 static int_32 on_control_write

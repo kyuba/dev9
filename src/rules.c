@@ -364,8 +364,6 @@ void dev9_rules_apply (sexpr sx, struct dfs *fs)
         .minor        = 0
     };
 
-    sx_xref (sx);
-
     tsx = lookup_symbol (sx, sym_devpath);
     if (stringp(tsx))
     {
@@ -424,6 +422,4 @@ void dev9_rules_apply (sexpr sx, struct dfs *fs)
 
         rule = rule->next;
     }
-
-    sx_destroy (sx);
 }
