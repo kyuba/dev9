@@ -131,7 +131,7 @@ static void dev9_rules_add_deep
 
                 if (symbolp(tsxc_car) && stringp (tsxc_cdr))
                 {
-                    struct graph *g = rx_compile_sx (tsxc_cdr);
+                    sexpr g = rx_compile_sx (tsxc_cdr);
 
                     tree_add_node_string_value
                             (&regex_tree, (char *)sx_string(tsxc_cdr), (void *)g);
@@ -223,7 +223,7 @@ static sexpr  dev9_rules_apply_deep
                         {
                             struct tree_node *n
                                     = tree_get_node_string (&regex_tree, (char *)sx_string(tsxc_cdr));
-                            struct graph *rx;
+                            sexpr rx;
                             sexpr against;
 
                             if (n == (void *)0) return sx_false;
@@ -232,7 +232,7 @@ static sexpr  dev9_rules_apply_deep
 
                             if (!stringp(against)) return sx_false;
 
-                            rx = (struct graph *)node_get_value (n);
+                            rx = (sexpr)node_get_value (n);
 
                             if (falsep(rx_match_sx (rx, against)))
                                 return sx_false;
