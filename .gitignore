@@ -8,7 +8,6 @@ rtf-*
 txt-*
 .sconsign.dblite
 
-dev9
 !include/generic/dev9
 reference
-build
+.build
