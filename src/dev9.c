@@ -5,7 +5,7 @@
 */
 
 /*
- * Copyright (c) 2008, 2009, Kyuba Project Members
+ * Copyright (c) 2008-2014, Kyuba Project Members
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,10 @@
 
 #include <dev9/rules.h>
 
+#include <sys/types.h>
+#include <asm/types.h>
 #include <asm/fcntl.h>
+#include <sys/socket.h>
 #include <linux/netlink.h>
 
 #define HELPTEXT\
@@ -266,7 +269,7 @@ int cmain() {
     char initialise_common = 0;
     char o_foreground = 0;
 
-    terminate_on_allocation_errors();
+//    terminate_on_allocation_errors();
 
     multiplex_io();
     dfs_update_ids();

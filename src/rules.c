@@ -5,7 +5,7 @@
 */
 
 /*
- * Copyright (c) 2008, 2009, Kyuba Project Members
+ * Copyright (c) 2008-2014, Kyuba Project Members
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,8 @@
 #include <curie/memory.h>
 #include <curie/tree.h>
 #include <duat/filesystem.h>
-#include <curie/immutable.h>
+#include <sievert/immutable.h>
+#include <sievert/tree.h>
 #include <curie/regex.h>
 
 static struct tree regex_tree = TREE_INITIALISER;
@@ -166,11 +167,11 @@ static void dev9_rules_add_deep
     } else if (truep(equalp(sxcar, sym_set_group))) {
         rule->opcode = dev9op_set_group;
         rule->parameters.string
-                = str_immutable_unaligned (sx_string(car(sxcdr)));
+                = str_immutable (sx_string(car(sxcdr)));
     } else if (truep(equalp(sxcar, sym_set_user))) {
         rule->opcode = dev9op_set_user;
         rule->parameters.string
-                = str_immutable_unaligned (sx_string(car(sxcdr)));
+                = str_immutable (sx_string(car(sxcdr)));
     } else if (truep(equalp(sxcar, sym_set_attribute))) {
         sexpr tsx = sxcdr;
 
@@ -407,7 +408,7 @@ void dev9_rules_apply (sexpr sx, struct dfs *fs)
     tsx = lookup_symbol (sx, sym_subsystem);
     if (stringp(tsx))
     {
-        state.user  = (char *)str_immutable_unaligned(sx_string (tsx));
+        state.user  = (char *)str_immutable(sx_string (tsx));
         state.group = state.user;
     }
 
